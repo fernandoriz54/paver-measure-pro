@@ -20,6 +20,9 @@ export default function ObstacleToolkit({
   deductions,
   setDeductions,
   title = "Obstacles & Visualizer",
+  visualizer,
+  onVisualizerChange,
+  editable = true,
 }) {
   const [open, setOpen] = useState(true);
   const totalDeduct = totalDeductionArea(deductions);
@@ -89,7 +92,14 @@ export default function ObstacleToolkit({
             </div>
           )}
 
-          {vizSections.length > 0 && <VisualPlan sections={vizSections} />}
+          {vizSections.length > 0 && (
+            <VisualPlan
+              sections={vizSections}
+              initialLayout={visualizer}
+              onLayoutChange={onVisualizerChange}
+              editable={editable}
+            />
+          )}
         </div>
       )}
     </div>

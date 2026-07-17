@@ -42,6 +42,17 @@
     },
     "installation_pattern": {
       "type": "string"
+    },
+    "builder_state": {
+      "type": "object",
+      "default": {}
+    },
+    "builder_version": {
+      "type": "number",
+      "default": 1
+    },
+    "last_saved_date": {
+      "type": "string"
     }
   },
   "required": [

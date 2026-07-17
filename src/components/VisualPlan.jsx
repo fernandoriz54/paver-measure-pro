@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Move, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
+import { Move, RefreshCw, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 
 const PALETTE = ["#0f766e", "#1d4ed8", "#b45309", "#7c3aed", "#be123c", "#0369a1", "#ca8a04", "#15803d"];
 const OB_COLOR = "#dc2626";
@@ -56,10 +56,11 @@ function ShapeSvg({ kind, p, w, h, color, strokeW = 0.4 }) {
   }
 }
 
-function Block({ item, color, scale, pos, onDragEnd, dragBounds }) {
+function Block({ item, color, scale, pos, rotation, onDragEnd, onRotate, dragBounds }) {
   const { w, h } = dimOf(item.kind || item.type, item.params);
   const pxW = Math.max(44, w * scale);
   const pxH = Math.max(44, h * scale);
+  const rot = rotation || 0;
   return (
     <motion.div
       drag
@@ -67,8 +68,8 @@ function Block({ item, color, scale, pos, onDragEnd, dragBounds }) {
       dragConstraints={dragBounds ? { left: 0, top: 0, right: Math.max(0, dragBounds.w - pxW), bottom: Math.max(0, dragBounds.h - pxH) } : undefined}
       animate={{ x: pos.x, y: pos.y }}
       onDragEnd={(_, info) => onDragEnd(pos.x + info.offset.x, pos.y + info.offset.y)}
-      className="absolute select-none cursor-grab active:cursor-grabbing"
-      style={{ width: pxW, height: pxH }}
+      className="absolute select-none cursor-grab active:cursor-grabbing group"
+      style={{ width: pxW, height: pxH, transform: `rotate(${rot}deg)`, transformOrigin: "center center" }}
     >
       <svg width={pxW} height={pxH} viewBox={`0 0 ${w} ${h}`} className="block drop-shadow-sm rounded-md overflow-visible">
         <ShapeSvg kind={item.kind || item.type} p={item.params} w={w} h={h} color={color} />
@@ -81,17 +82,28 @@ function Block({ item, color, scale, pos, onDragEnd, dragBounds }) {
           {Math.round(item.net)} ft²
         </div>
       )}
+      {onRotate && (
+        <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition flex flex-col gap-0.5">
+          <button onClick={(e) => { e.stopPropagation(); onRotate((rot + 15) % 360); }} className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow flex items-center justify-center text-slate-600 hover:text-indigo-600" title="Rotate 15°">
+            <RotateCw size={12} />
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 }
 
-export default function VisualPlan({ sections }) {
-  const [scale, setScale] = useState(6);
+// Controlled-by-default visualizer. Parent may pass initialLayout (persisted) and
+// onLayoutChange to capture zoom + positions for saving.
+export default function VisualPlan({ sections, initialLayout, onLayoutChange, editable = true }) {
+  const [scale, setScale] = useState(initialLayout?.scale ?? 6);
   const prevScale = useRef(scale);
   const canvasRef = useRef(null);
 
-  const [secPos, setSecPos] = useState({});
-  const [obsPos, setObsPos] = useState({});
+  const [secPos, setSecPos] = useState(initialLayout?.secPos || {});
+  const [obsPos, setObsPos] = useState(initialLayout?.obsPos || {});
+  const [secRot, setSecRot] = useState(initialLayout?.secRot || {});
+  const [obsRot, setObsRot] = useState(initialLayout?.obsRot || {});
 
   // default grid positions keyed by id (feet-units-agnostic; just px)
   const defaults = useMemo(() => {
@@ -107,9 +119,13 @@ export default function VisualPlan({ sections }) {
 
   const obstacles = useMemo(() => {
     const list = [];
-    sections.forEach((sec) => sec.deductions.forEach((d) => list.push({ ...d, key: `${sec.id}-${d.id}`, secLabel: sec.label })));
+    sections.forEach((sec) => (sec.deductions || []).forEach((d) => list.push({ ...d, key: `${sec.id}-${d.id}`, secLabel: sec.label })));
     return list;
   }, [sections]);
+
+  const emit = useCallback((next) => {
+    if (onLayoutChange) onLayoutChange(next);
+  }, [onLayoutChange]);
 
   const setScaleAndRescale = useCallback((next) => {
     const ratio = next / prevScale.current;
@@ -118,20 +134,37 @@ export default function VisualPlan({ sections }) {
     setSecPos((p) => {
       const out = {};
       Object.keys(p).forEach((k) => (out[k] = { x: p[k].x * ratio, y: p[k].y * ratio }));
+      emit({ scale: next, secPos: out, obsPos, secRot, obsRot });
       return out;
     });
     setObsPos((p) => {
       const out = {};
       Object.keys(p).forEach((k) => (out[k] = { x: p[k].x * ratio, y: p[k].y * ratio }));
+      emit({ scale: next, secPos, obsPos: out, secRot, obsRot });
       return out;
     });
-  }, []);
+  }, [emit, obsPos, secPos, secRot, obsRot]);
 
-  const reset = () => { setSecPos({}); setObsPos({}); };
+  const reset = () => {
+    setSecPos({}); setObsPos({});
+    emit({ scale, secPos: {}, obsPos: {}, secRot, obsRot });
+  };
+
+  const onSecDrag = (id, x, y) => {
+    const next = { ...secPos, [id]: { x, y } };
+    setSecPos(next);
+    emit({ scale, secPos: next, obsPos, secRot, obsRot });
+  };
+  const onObsDrag = (key, x, y) => {
+    const next = { ...obsPos, [key]: { x, y } };
+    setObsPos(next);
+    emit({ scale, secPos, obsPos: next, secRot, obsRot });
+  };
+  const onSecRotate = (id, deg) => { const n = { ...secRot, [id]: deg }; setSecRot(n); emit({ scale, secPos, obsPos, secRot: n, obsRot }); };
+  const onObsRotate = (key, deg) => { const n = { ...obsRot, [key]: deg }; setObsRot(n); emit({ scale, secPos, obsPos, secRot, obsRot: n }); };
 
   const bounds = canvasRef.current ? { w: canvasRef.current.offsetWidth, h: canvasRef.current.offsetHeight } : null;
 
-  // tallest content estimate for canvas height
   const canvasMinH = Math.max(320, sections.length * 60 + obstacles.length * 40);
 
   return (
@@ -146,14 +179,16 @@ export default function VisualPlan({ sections }) {
             <p className="text-xs text-slate-500">True-to-dimension shapes — zoom keeps proportions exact.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setScaleAndRescale(Math.max(2, scale - 1))} className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-800"><ZoomOut size={15} /></button>
-          <div className="text-xs font-semibold text-slate-600 w-16 text-center">{scale} px / ft</div>
-          <button onClick={() => setScaleAndRescale(Math.min(20, scale + 1))} className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-800"><ZoomIn size={15} /></button>
-          <button onClick={reset} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 ml-1">
-            <RefreshCw size={13} /> Reset
-          </button>
-        </div>
+        {editable && (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setScaleAndRescale(Math.max(2, scale - 1))} className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-800"><ZoomOut size={15} /></button>
+            <div className="text-xs font-semibold text-slate-600 w-16 text-center">{scale} px / ft</div>
+            <button onClick={() => setScaleAndRescale(Math.min(20, scale + 1))} className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-800"><ZoomIn size={15} /></button>
+            <button onClick={reset} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 ml-1">
+              <RefreshCw size={13} /> Reset
+            </button>
+          </div>
+        )}
       </div>
 
       <div
@@ -172,8 +207,10 @@ export default function VisualPlan({ sections }) {
             color={PALETTE[i % PALETTE.length]}
             scale={scale}
             pos={pos(sec.id, secPos)}
+            rotation={secRot[sec.id]}
+            onDragEnd={(x, y) => onSecDrag(sec.id, x, y)}
+            onRotate={editable ? (deg) => onSecRotate(sec.id, deg) : undefined}
             dragBounds={bounds}
-            onDragEnd={(x, y) => setSecPos((p) => ({ ...p, [sec.id]: { x, y } }))}
           />
         ))}
         {obstacles.map((o) => (
@@ -183,8 +220,10 @@ export default function VisualPlan({ sections }) {
             color={OB_COLOR}
             scale={scale}
             pos={pos(o.key, obsPos)}
+            rotation={obsRot[o.key]}
+            onDragEnd={(x, y) => onObsDrag(o.key, x, y)}
+            onRotate={editable ? (deg) => onObsRotate(o.key, deg) : undefined}
             dragBounds={bounds}
-            onDragEnd={(x, y) => setObsPos((p) => ({ ...p, [o.key]: { x, y } }))}
           />
         ))}
       </div>
