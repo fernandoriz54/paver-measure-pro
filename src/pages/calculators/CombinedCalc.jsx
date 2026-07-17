@@ -20,14 +20,20 @@ const SHAPE_TYPES = [
 // Obstacle presets: named things you keep & work around.
 // kind drives the area formula; needs drives which params are shown.
 const DEDUCT_PRESETS = [
+  { name: "Rectangle", kind: "rect", needs: ["length", "width"] },
+  { name: "Square", kind: "square", needs: ["side"] },
+  { name: "Triangle", kind: "triangle", needs: ["base", "height"] },
+  { name: "Full Circle", kind: "circle", needs: ["radius"] },
+  { name: "Half Circle", kind: "half", needs: ["radius"] },
+  { name: "Quarter Circle", kind: "quarter", needs: ["radius"] },
+  { name: "Planter Bed", kind: "rect", needs: ["length", "width"] },
+  { name: "Section Cut-Off", kind: "rect", needs: ["length", "width"] },
+  { name: "Corner Notch", kind: "triangle", needs: ["base", "height"] },
   { name: "Tree", kind: "circle", needs: ["diameter"] },
   { name: "Light Post", kind: "circle", needs: ["diameter"] },
-  { name: "Planter", kind: "rect", needs: ["length", "width"] },
   { name: "Electrical Unit", kind: "rect", needs: ["length", "width"] },
   { name: "AC Unit", kind: "rect", needs: ["length", "width"] },
   { name: "Fence", kind: "rect", needs: ["length", "width"] },
-  { name: "Half Circle", kind: "half", needs: ["radius"] },
-  { name: "Quarter Circle", kind: "quarter", needs: ["radius"] },
   { name: "Path / Walk", kind: "path", needs: ["linear", "width"] },
 ];
 const presetByName = (nm) => DEDUCT_PRESETS.find((p) => p.name === nm);
@@ -65,18 +71,22 @@ function shapeFormula(type, p, gross) {
 }
 function deductArea(kind, p) {
   switch (kind) {
-    case "circle": return PI * ((p.diameter || 0) / 2) ** 2;
+    case "circle": return p.diameter ? PI * ((p.diameter || 0) / 2) ** 2 : PI * (p.radius || 0) ** 2;
     case "half": return 0.5 * PI * (p.radius || 0) ** 2;
     case "quarter": return 0.25 * PI * (p.radius || 0) ** 2;
+    case "square": return (p.side || 0) ** 2;
+    case "triangle": return 0.5 * (p.base || 0) * (p.height || 0);
     case "path": return (p.linear || 0) * (p.width || 0);
     default: return (p.length || 0) * (p.width || 0); // rect
   }
 }
 function deductFormula(kind, p, area) {
   switch (kind) {
-    case "circle": return `${PI} × (${fmt(p.diameter)}÷2)² = ${fmt(area)}`;
+    case "circle": return p.diameter != null ? `${PI} × (${fmt(p.diameter)}÷2)² = ${fmt(area)}` : `${PI} × ${fmt(p.radius)}² = ${fmt(area)}`;
     case "half": return `½ × ${PI} × ${fmt(p.radius)}² = ${fmt(area)}`;
     case "quarter": return `¼ × ${PI} × ${fmt(p.radius)}² = ${fmt(area)}`;
+    case "square": return `${fmt(p.side)} × ${fmt(p.side)} = ${fmt(area)}`;
+    case "triangle": return `½ × ${fmt(p.base)} × ${fmt(p.height)} = ${fmt(area)}`;
     case "path": return `${fmt(p.linear)} × ${fmt(p.width)} = ${fmt(area)}`;
     default: return `${fmt(p.length)} × ${fmt(p.width)} = ${fmt(area)}`; // rect
   }
@@ -311,6 +321,7 @@ function labelFor(key) {
     b: "Side B (bottom)",
     diameter: "Diameter",
     linear: "Linear Length (along path)",
+    side: "Side",
     width: "Width",
   };
   return map[key] || key;
