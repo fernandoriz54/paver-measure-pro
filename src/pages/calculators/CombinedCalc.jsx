@@ -6,6 +6,7 @@ import { ResultCard, FormulaBreakdown } from "@/components/ResultCard";
 import { PI, formatValue } from "@/lib/measurementUtils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import VisualPlan from "@/components/VisualPlan";
 
 const SHAPE_TYPES = [
   { value: "rectangle", label: "Rectangle", needs: ["length", "width"] },
@@ -271,6 +272,8 @@ export default function CombinedCalc() {
         >
           <Plus size={20} /> Add Section
         </button>
+
+        {computed.length > 0 && <VisualPlan sections={computed} />}
 
         {/* Project totals */}
         <div className="bg-emerald-800 text-white rounded-2xl p-4 space-y-2">
