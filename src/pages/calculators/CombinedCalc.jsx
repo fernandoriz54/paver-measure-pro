@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Minus } from "lucide-react";
 import CalcShell from "@/components/CalcShell";
 import MeasurementInput from "@/components/MeasurementInput";
@@ -94,11 +94,26 @@ function deductFormula(kind, p, area) {
 }
 const fmt = (n) => formatValue(n || 0, "hundredth");
 
+const STORAGE_KEY = "paver_combined_state_v1";
+const loadSections = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.sections) && parsed.sections.length) return parsed.sections;
+    }
+  } catch {}
+  return [{ id: uid(), label: "Section A", type: "rectangle", params: { length: 0, width: 0 }, deductions: [] }];
+};
+
 export default function CombinedCalc() {
-  const [sections, setSections] = useState([
-    { id: uid(), label: "Section A", type: "rectangle", params: { length: 0, width: 0 }, deductions: [] },
-  ]);
+  const [sections, setSections] = useState(loadSections);
   const [precision] = useState("hundredth");
+
+  // Persist all input so nothing is lost between visits/refreshes.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ sections })); } catch {}
+  }, [sections]);
 
   const updateSection = (id, patch) =>
     setSections((s) => s.map((sec) => (sec.id === id ? { ...sec, ...patch } : sec)));

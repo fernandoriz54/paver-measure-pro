@@ -1,160 +1,198 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Move, Maximize2, RefreshCw } from "lucide-react";
+import { Move, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 
-const PI = 3.14;
+const PALETTE = ["#0f766e", "#1d4ed8", "#b45309", "#7c3aed", "#be123c", "#0369a1", "#ca8a04", "#15803d"];
+const OB_COLOR = "#dc2626";
+const MIN_FT = 2; // min display dimension in feet so tiny shapes stay visible
 
-// Map a section/obstacle shape to a tiny inline SVG so the block looks like the shape.
-function ShapeGlyph({ kind, params, color }) {
-  const stroke = color;
-  const fill = color + "22";
-  const common = { stroke, fill, strokeWidth: 2 };
+// dimension (feet) of a shape/obstacle given its kind + params
+function dimOf(kind, p = {}) {
   switch (kind) {
     case "rectangle":
-    case "rect":
-      return <svg width="34" height="26"><rect x="2" y="2" width="30" height="22" rx="2" {...common} /></svg>;
-    case "square":
-      return <svg width="26" height="26"><rect x="2" y="2" width="22" height="22" rx="2" {...common} /></svg>;
-    case "circle":
-      return <svg width="26" height="26"><circle cx="13" cy="13" r="11" {...common} /></svg>;
-    case "half":
-      return <svg width="30" height="20"><path d="M2 18 A 13 13 0 0 1 28 18 Z" {...common} /></svg>;
-    case "quarter":
-      return <svg width="24" height="24"><path d="M2 22 L 2 2 A 20 20 0 0 1 22 22 Z" {...common} /></svg>;
-    case "triangle":
-      return <svg width="30" height="24"><polygon points="15,3 28,21 2,21" {...common} /></svg>;
-    case "trapezoid":
-      return <svg width="32" height="22"><polygon points="6,3 26,3 30,19 2,19" {...common} /></svg>;
-    case "path":
-      return <svg width="34" height="20"><rect x="2" y="5" width="30" height="10" rx="4" {...common} /></svg>;
-    default:
-      return <svg width="30" height="22"><rect x="2" y="2" width="26" height="18" rx="2" {...common} /></svg>;
+    case "rect": return { w: Math.max(MIN_FT, p.length || 0), h: Math.max(MIN_FT, p.width || 0) };
+    case "square": { const s = Math.max(MIN_FT, p.side || 0); return { w: s, h: s }; }
+    case "circle": {
+      const r = p.radius != null ? p.radius : (p.diameter || 0) / 2;
+      const d = Math.max(MIN_FT, r * 2); return { w: d, h: d };
+    }
+    case "half": { const d = Math.max(MIN_FT, (p.radius || 0) * 2); return { w: d, h: Math.max(MIN_FT, p.radius || 0) }; }
+    case "quarter": { const s = Math.max(MIN_FT, p.radius || 0); return { w: s, h: s }; }
+    case "triangle": return { w: Math.max(MIN_FT, p.base || 0), h: Math.max(MIN_FT, p.height || 0) };
+    case "trapezoid": return { w: Math.max(MIN_FT, Math.max(p.a || 0, p.b || 0)), h: Math.max(MIN_FT, p.height || 0) };
+    case "path": return { w: Math.min(60, Math.max(MIN_FT, p.linear || 0)), h: Math.max(MIN_FT, p.width || 0) };
+    default: return { w: MIN_FT, h: MIN_FT };
   }
 }
 
-const PALETTE = ["#0f766e", "#1d4ed8", "#b45309", "#7c3aed", "#be123c", "#0369a1", "#ca8a04", "#15803d"];
+// draw the shape in a box of w×h (feet) — viewBox matches so it stays proportional
+function ShapeSvg({ kind, p, w, h, color, strokeW = 0.4 }) {
+  const fill = color + "33";
+  const stroke = color;
+  const common = { fill, stroke, strokeWidth: strokeW };
+  switch (kind) {
+    case "rectangle":
+    case "rect":
+      return <rect x={0} y={0} width={w} height={h} rx={Math.min(0.6, w / 8)} {...common} />;
+    case "square":
+      return <rect x={0} y={0} width={w} height={h} rx={0.4} {...common} />;
+    case "circle":
+      return <circle cx={w / 2} cy={h / 2} r={w / 2} {...common} />;
+    case "half":
+      return <path d={`M0 ${h} A ${w / 2} ${h} 0 0 1 ${w} ${h} Z`} {...common} />;
+    case "quarter":
+      return <path d={`M0 ${h} L 0 0 A ${w} ${h} 0 0 1 ${w} ${h} Z`} {...common} />;
+    case "triangle":
+      return <polygon points={`${w / 2},0 ${w},${h} 0,${h}`} {...common} />;
+    case "trapezoid": {
+      const top = Math.max(p.a || 0, p.b || 0);
+      const off = (w - top) / 2;
+      return <polygon points={`${off},0 ${off + top},0 ${w},${h} 0,${h}`} {...common} />;
+    }
+    case "path":
+      return <rect x={0} y={0} width={w} height={h} rx={Math.min(h / 2, 1)} {...common} />;
+    default:
+      return <rect x={0} y={0} width={w} height={h} {...common} />;
+  }
+}
 
-const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-// size a block from its area (sqrt-scaled) for a pleasing proportional look
-const sizeFromArea = (area) => clamp(70 + Math.sqrt(Math.max(0, area)) * 4.5, 70, 150);
+function Block({ item, color, scale, pos, onDragEnd, dragBounds }) {
+  const { w, h } = dimOf(item.kind || item.type, item.params);
+  const pxW = Math.max(44, w * scale);
+  const pxH = Math.max(44, h * scale);
+  return (
+    <motion.div
+      drag
+      dragMomentum={false}
+      dragConstraints={dragBounds ? { left: 0, top: 0, right: Math.max(0, dragBounds.w - pxW), bottom: Math.max(0, dragBounds.h - pxH) } : undefined}
+      animate={{ x: pos.x, y: pos.y }}
+      onDragEnd={(_, info) => onDragEnd(pos.x + info.offset.x, pos.y + info.offset.y)}
+      className="absolute select-none cursor-grab active:cursor-grabbing"
+      style={{ width: pxW, height: pxH }}
+    >
+      <svg width={pxW} height={pxH} viewBox={`0 0 ${w} ${h}`} className="block drop-shadow-sm rounded-md overflow-visible">
+        <ShapeSvg kind={item.kind || item.type} p={item.params} w={w} h={h} color={color} />
+      </svg>
+      <div className="absolute left-1/2 -translate-x-1/2 -bottom-5 whitespace-nowrap text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/90 border border-slate-200 shadow-sm" style={{ color }}>
+        {item.label || item.name}
+      </div>
+      {item.net != null && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-1 text-[8px] font-semibold text-slate-700 bg-white/80 rounded px-1">
+          {Math.round(item.net)} ft²
+        </div>
+      )}
+    </motion.div>
+  );
+}
 
 export default function VisualPlan({ sections }) {
-  // Default grid positions, stable per section id
-  const initialPositions = useMemo(() => {
+  const [scale, setScale] = useState(6);
+  const prevScale = useRef(scale);
+  const canvasRef = useRef(null);
+
+  const [secPos, setSecPos] = useState({});
+  const [obsPos, setObsPos] = useState({});
+
+  // default grid positions keyed by id (feet-units-agnostic; just px)
+  const defaults = useMemo(() => {
     const map = {};
     sections.forEach((sec, i) => {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      map[sec.id] = { x: 16 + col * 190, y: 16 + row * 180 };
+      const col = i % 2, row = Math.floor(i / 2);
+      map[sec.id] = { x: 20 + col * 210, y: 24 + row * 200 };
     });
     return map;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [secPos, setSecPos] = useState(initialPositions);
-  const [obsPos, setObsPos] = useState({});
-  const [canvasRef, setCanvasRef] = useState(null);
+  const pos = (id, store) => store[id] ?? defaults[id] ?? { x: 240, y: 30 };
 
-  const reset = () => {
-    setSecPos(initialPositions);
-    setObsPos({});
-  };
-
-  // flatten obstacles across sections into draggable markers
   const obstacles = useMemo(() => {
     const list = [];
-    sections.forEach((sec) => {
-      sec.deductions.forEach((d, di) => {
-        const key = `${sec.id}-${d.id}`;
-        list.push({ key, secLabel: sec.label, ...d });
-      });
-    });
+    sections.forEach((sec) => sec.deductions.forEach((d) => list.push({ ...d, key: `${sec.id}-${d.id}`, secLabel: sec.label })));
     return list;
   }, [sections]);
 
+  const setScaleAndRescale = useCallback((next) => {
+    const ratio = next / prevScale.current;
+    prevScale.current = next;
+    setScale(next);
+    setSecPos((p) => {
+      const out = {};
+      Object.keys(p).forEach((k) => (out[k] = { x: p[k].x * ratio, y: p[k].y * ratio }));
+      return out;
+    });
+    setObsPos((p) => {
+      const out = {};
+      Object.keys(p).forEach((k) => (out[k] = { x: p[k].x * ratio, y: p[k].y * ratio }));
+      return out;
+    });
+  }, []);
+
+  const reset = () => { setSecPos({}); setObsPos({}); };
+
+  const bounds = canvasRef.current ? { w: canvasRef.current.offsetWidth, h: canvasRef.current.offsetHeight } : null;
+
+  // tallest content estimate for canvas height
+  const canvasMinH = Math.max(320, sections.length * 60 + obstacles.length * 40);
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
             <Move size={18} className="text-white" />
           </div>
           <div>
             <h2 className="font-bold text-slate-800 text-sm">Drag &amp; Drop Visualizer</h2>
-            <p className="text-xs text-slate-500">Arrange sections &amp; obstacles to match your layout plan.</p>
+            <p className="text-xs text-slate-500">True-to-dimension shapes — zoom keeps proportions exact.</p>
           </div>
         </div>
-        <button onClick={reset} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-          <RefreshCw size={13} /> Reset layout
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setScaleAndRescale(Math.max(2, scale - 1))} className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-800"><ZoomOut size={15} /></button>
+          <div className="text-xs font-semibold text-slate-600 w-16 text-center">{scale} px / ft</div>
+          <button onClick={() => setScaleAndRescale(Math.min(20, scale + 1))} className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-800"><ZoomIn size={15} /></button>
+          <button onClick={reset} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 ml-1">
+            <RefreshCw size={13} /> Reset
+          </button>
+        </div>
       </div>
 
       <div
-        ref={setCanvasRef}
-        className="relative w-full min-h-[320px] bg-slate-50"
+        ref={canvasRef}
+        className="relative w-full"
         style={{
-          backgroundImage:
-            "linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
+          minHeight: canvasMinH,
+          backgroundImage: "linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)",
+          backgroundSize: `${scale * 2}px ${scale * 2}px`,
         }}
       >
-        {/* Section blocks */}
-        {sections.map((sec, i) => {
-          const color = PALETTE[i % PALETTE.length];
-          const size = sizeFromArea(sec.gross);
-          const pos = secPos[sec.id] || { x: 16, y: 16 };
-          return (
-            <motion.div
-              key={sec.id}
-              drag
-              dragMomentum={false}
-              dragConstraints={canvasRef ? { left: 0, top: 0, right: canvasRef.offsetWidth - size, bottom: canvasRef.offsetHeight - size } : undefined}
-              animate={{ x: pos.x, y: pos.y }}
-              onDragEnd={(_, info) => setSecPos((p) => ({ ...p, [sec.id]: { x: pos.x + info.offset.x, y: pos.y + info.offset.y } }))}
-              className="absolute rounded-xl shadow-md border-2 bg-white flex flex-col items-center justify-center text-center select-none cursor-grab active:cursor-grabbing"
-              style={{ width: size, height: size, borderColor: color }}
-            >
-              <div className="opacity-90"><ShapeGlyph kind={sec.type} params={sec.params} color={color} /></div>
-              <div className="text-[11px] font-bold text-slate-800 leading-tight mt-0.5 px-1">{sec.label}</div>
-              <div className="text-[10px] text-slate-500">{Math.round(sec.net)} sq ft</div>
-              {sec.deductions.length > 0 && (
-                <div className="text-[9px] text-rose-500 font-semibold">−{sec.deductions.length} obstacle{sec.deductions.length > 1 ? "s" : ""}</div>
-              )}
-            </motion.div>
-          );
-        })}
-
-        {/* Obstacle markers */}
-        {obstacles.map((o) => {
-          const def = obsPos[o.key] || { x: 240, y: 16 };
-          const color = "#dc2626";
-          const size = clamp(28 + Math.sqrt(Math.max(0, o.area)) * 2, 28, 56);
-          return (
-            <motion.div
-              key={o.key}
-              drag
-              dragMomentum={false}
-              dragConstraints={canvasRef ? { left: 0, top: 0, right: canvasRef.offsetWidth - size, bottom: canvasRef.offsetHeight - size } : undefined}
-              animate={{ x: def.x, y: def.y }}
-              onDragEnd={(_, info) => setObsPos((p) => ({ ...p, [o.key]: { x: def.x + info.offset.x, y: def.y + info.offset.y } }))}
-              className="absolute rounded-full shadow-sm border-2 flex items-center justify-center text-center select-none cursor-grab active:cursor-grabbing"
-              style={{ width: size, height: size, borderColor: color, background: color + "22" }}
-            >
-              <span className="text-[8px] font-bold text-rose-700 leading-none px-0.5">{o.name}</span>
-            </motion.div>
-          );
-        })}
-
-        {sections.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-            <Maximize2 size={18} className="mr-2" /> Add sections above to start visualizing.
-          </div>
-        )}
+        {sections.map((sec, i) => (
+          <Block
+            key={sec.id}
+            item={{ ...sec, kind: sec.type }}
+            color={PALETTE[i % PALETTE.length]}
+            scale={scale}
+            pos={pos(sec.id, secPos)}
+            dragBounds={bounds}
+            onDragEnd={(x, y) => setSecPos((p) => ({ ...p, [sec.id]: { x, y } }))}
+          />
+        ))}
+        {obstacles.map((o) => (
+          <Block
+            key={o.key}
+            item={o}
+            color={OB_COLOR}
+            scale={scale}
+            pos={pos(o.key, obsPos)}
+            dragBounds={bounds}
+            onDragEnd={(x, y) => setObsPos((p) => ({ ...p, [o.key]: { x, y } }))}
+          />
+        ))}
       </div>
 
-      <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm border-2 border-indigo-600 bg-white" /> Section block</span>
+      <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1 items-center">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm border-2 border-indigo-600 bg-white" /> Section (true dimensions)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full border-2 border-rose-600" /> Obstacle (deduction)</span>
-        <span>Drag any block to reposition.</span>
+        <span>Use +/− to scale — proportions stay locked.</span>
       </div>
     </div>
   );
