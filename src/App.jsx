@@ -6,6 +6,8 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import { ConverterProvider } from '@/lib/ConverterContext';
+import FloatingConverter from '@/components/converter/FloatingConverter';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Dashboard from '@/pages/Dashboard';
 import MeasurementGuide from '@/pages/MeasurementGuide';
@@ -60,6 +62,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -92,6 +95,8 @@ const AuthenticatedApp = () => {
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    <FloatingConverter />
+    </>
   );
 };
 
@@ -103,7 +108,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <ConverterProvider>
+            <AuthenticatedApp />
+          </ConverterProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>
