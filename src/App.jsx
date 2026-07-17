@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Dashboard from '@/pages/Dashboard';
 import MeasurementGuide from '@/pages/MeasurementGuide';
+import HowToMeasure from '@/pages/HowToMeasure';
 import NewProject from '@/pages/projects/NewProject';
 import Projects from '@/pages/projects/Projects';
 import ProjectDetail from '@/pages/projects/ProjectDetail';
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/guide" element={<MeasurementGuide />} />
+        <Route path="/how-to" element={<HowToMeasure />} />
         <Route path="/projects/new" element={<NewProject />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />

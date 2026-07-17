@@ -19,6 +19,7 @@ import {
   Shovel,
   Grid3x3,
   LayoutGrid,
+  GraduationCap,
 } from "lucide-react";
 
 const CALC_BUTTONS = [
@@ -106,7 +107,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Measurement guide */}
+        {/* Training & guides */}
+        <button
+          onClick={() => navigate("/how-to")}
+          className="w-full flex items-center gap-3 bg-amber-600 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
+        >
+          <GraduationCap size={24} />
+          <div className="text-left flex-1">
+            <div className="font-bold text-base">How To Measure</div>
+            <div className="text-xs text-amber-100">Visual training: irregular areas, paths, curves</div>
+          </div>
+        </button>
+
         <button
           onClick={() => navigate("/guide")}
           className="w-full flex items-center gap-3 bg-slate-800 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
@@ -114,7 +126,7 @@ export default function Dashboard() {
           <BookOpen size={24} />
           <div className="text-left flex-1">
             <div className="font-bold text-base">Measurement Guide</div>
-            <div className="text-xs text-slate-300">Step-by-step instructions & diagrams</div>
+            <div className="text-xs text-slate-300">Formulas & reference diagrams</div>
           </div>
         </button>
 
