@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, GraduationCap, Spline, Route, Triangle as TriangleIcon, CheckSquare } from "lucide-react";
+import MeasurePractice from "@/components/MeasurePractice";
 
 /* ---------- Visual diagrams (inline SVG, drawn to concept, not hard scale) ---------- */
 
@@ -387,6 +388,8 @@ export default function HowToMeasure() {
             </div>
           );
         })}
+
+        <MeasurePractice />
 
         <div className="bg-emerald-800 text-white rounded-2xl p-5">
           <h2 className="font-bold text-lg mb-2">Ready to calculate?</h2>
