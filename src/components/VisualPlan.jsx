@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Move, RefreshCw, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import CurvedPath from "@/components/visualizer/CurvedPath";
+import CurveEditor from "@/components/visualizer/CurveEditor";
+import { ensureCurve } from "@/lib/curvePath";
 
 const PALETTE = ["#0f766e", "#1d4ed8", "#b45309", "#7c3aed", "#be123c", "#0369a1", "#ca8a04", "#15803d"];
 const OB_COLOR = "#dc2626";
@@ -95,8 +98,9 @@ function Block({ item, color, scale, pos, rotation, onDragEnd, onRotate, dragBou
 
 // Controlled-by-default visualizer. Parent may pass initialLayout (persisted) and
 // onLayoutChange to capture zoom + positions for saving.
-export default function VisualPlan({ sections, initialLayout, onLayoutChange, editable = true }) {
+export default function VisualPlan({ sections, initialLayout, onLayoutChange, editable = true, onUpdateDeduction }) {
   const [scale, setScale] = useState(initialLayout?.scale ?? 6);
+  const [selectedKey, setSelectedKey] = useState(null);
   const prevScale = useRef(scale);
   const canvasRef = useRef(null);
 
@@ -213,20 +217,48 @@ export default function VisualPlan({ sections, initialLayout, onLayoutChange, ed
             dragBounds={bounds}
           />
         ))}
-        {obstacles.map((o) => (
-          <Block
-            key={o.key}
-            item={o}
-            color={OB_COLOR}
-            scale={scale}
-            pos={pos(o.key, obsPos)}
-            rotation={obsRot[o.key]}
-            onDragEnd={(x, y) => onObsDrag(o.key, x, y)}
-            onRotate={editable ? (deg) => onObsRotate(o.key, deg) : undefined}
-            dragBounds={bounds}
-          />
-        ))}
+        {obstacles.map((o) =>
+          o.kind === "path" ? (
+            <CurvedPath
+              key={o.key}
+              item={o}
+              color={OB_COLOR}
+              scale={scale}
+              pos={pos(o.key, obsPos)}
+              selected={selectedKey === o.key}
+              onSelect={() => setSelectedKey(o.key)}
+              onUpdateCurve={(patch) => onUpdateDeduction && onUpdateDeduction(o.id, { curve: { ...ensureCurve(o.curve), ...patch } })}
+              onDragEnd={(x, y) => onObsDrag(o.key, x, y)}
+              editable={editable}
+            />
+          ) : (
+            <Block
+              key={o.key}
+              item={o}
+              color={OB_COLOR}
+              scale={scale}
+              pos={pos(o.key, obsPos)}
+              rotation={obsRot[o.key]}
+              onDragEnd={(x, y) => onObsDrag(o.key, x, y)}
+              onRotate={editable ? (deg) => onObsRotate(o.key, deg) : undefined}
+              dragBounds={bounds}
+            />
+          )
+        )}
       </div>
+
+      {/* Curve editor for the selected curved path */}
+      {editable && selectedKey && (() => {
+        const o = obstacles.find((x) => x.key === selectedKey);
+        if (!o || o.kind !== "path") return null;
+        return (
+          <CurveEditor
+            obstacle={o}
+            curve={ensureCurve(o.curve)}
+            onUpdateCurve={(patch) => onUpdateDeduction && onUpdateDeduction(o.id, { curve: { ...ensureCurve(o.curve), ...patch } })}
+          />
+        );
+      })()}
 
       <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1 items-center">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm border-2 border-indigo-600 bg-white" /> Section (true dimensions)</span>

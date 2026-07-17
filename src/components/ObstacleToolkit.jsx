@@ -98,6 +98,7 @@ export default function ObstacleToolkit({
               initialLayout={visualizer}
               onLayoutChange={onVisualizerChange}
               editable={editable}
+              onUpdateDeduction={(id, patch) => setDeductions((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))}
             />
           )}
         </div>
