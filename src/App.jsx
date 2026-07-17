@@ -27,6 +27,7 @@ import IrregularCalc from '@/pages/calculators/IrregularCalc';
 import MaterialCalc from '@/pages/calculators/MaterialCalc';
 import UnitConverter from '@/pages/calculators/UnitConverter';
 import CombinedCalc from '@/pages/calculators/CombinedCalc';
+import EntranceCalc from '@/pages/calculators/EntranceCalc';
 import ProductLibrary from '@/pages/ProductLibrary';
 import EstimateBuilder from '@/pages/EstimateBuilder';
 import Login from '@/pages/Login';
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
         <Route path="/calc/material" element={<MaterialCalc />} />
         <Route path="/calc/converter" element={<UnitConverter />} />
         <Route path="/calc/combined" element={<CombinedCalc />} />
+        <Route path="/calc/entrance" element={<EntranceCalc />} />
         <Route path="/products" element={<ProductLibrary />} />
         <Route path="/builder" element={<EstimateBuilder />} />
       </Route>

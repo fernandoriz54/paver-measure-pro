@@ -17,6 +17,7 @@ import {
   Ruler,
   Sparkles,
   Shovel,
+  DoorOpen,
   Grid3x3,
   LayoutGrid,
   GraduationCap,
@@ -37,6 +38,7 @@ const CALC_BUTTONS = [
   { label: "Material Quantity", path: "/calc/material", icon: Package, color: "bg-violet-700" },
   { label: "Unit Converter", path: "/calc/converter", icon: Ruler, color: "bg-fuchsia-700" },
   { label: "Combined + Deduct", path: "/calc/combined", icon: Plus, color: "bg-emerald-900" },
+  { label: "Home Entrance", path: "/calc/entrance", icon: DoorOpen, color: "bg-emerald-800" },
 ];
 
 export default function Dashboard() {
