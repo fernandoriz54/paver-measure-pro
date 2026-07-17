@@ -144,6 +144,22 @@ function CurveOffsetDiagram() {
   );
 }
 
+function CurvedLengthDiagram() {
+  return (
+    <svg viewBox="0 0 280 160" className="w-full max-w-sm mx-auto">
+      {/* curve path */}
+      <path d="M 20 130 Q 90 10 150 80 T 260 30" fill="none" stroke="#4338ca" strokeWidth="22" strokeLinecap="round" opacity="0.3" />
+      <path d="M 20 130 Q 90 10 150 80 T 260 30" fill="none" stroke="#4338ca" strokeWidth="2" strokeDasharray="6 4" />
+      {/* rope laid along curve, pulled straight below */}
+      <line x1="20" y1="150" x2="260" y2="150" stroke="#b45309" strokeWidth="2" />
+      <circle cx="20" cy="150" r="3" fill="#b45309" />
+      <circle cx="260" cy="150" r="3" fill="#b45309" />
+      <text x="140" y="148" textAnchor="middle" fontSize="10" fill="#b45309" fontWeight="600">rope, pulled straight</text>
+      <text x="140" y="14" textAnchor="middle" fontSize="9" fill="#334155">Rope follows the curve → measure it straight = true length</text>
+    </svg>
+  );
+}
+
 function SquareCheckDiagram() {
   return (
     <svg viewBox="0 0 220 180" className="w-full max-w-xs mx-auto">
@@ -188,6 +204,21 @@ const HOW_TO = [
       "Area = length × average width.",
       "If one part is much wider (an entrance), treat it as its own section.",
       "Mistake to avoid: measuring width only once.",
+    ],
+  },
+  {
+    icon: Spline,
+    title: "Length of a Curved Path",
+    intro: "A tape won't bend along a curve. Here are the 3 best ways to get the true length.",
+    diagram: <CurvedLengthDiagram />,
+    steps: [
+      "Easiest — Rope method: lay a garden hose or rope flat along the middle of the curve, following its shape.",
+      "Mark where the curve starts and ends on the rope, then pull the rope straight and measure between those marks. That's your length.",
+      "Method 2 — Segment method: mark a point every 2–3 ft along the curve with chalk or flags.",
+      "Measure each short straight piece between marks with your tape, and add them all up.",
+      "Method 3 — Rolling wheel: roll a measuring wheel down the center of the curve and read the total.",
+      "Tip: stay on the center line for all three — measuring along an edge gives a longer or shorter number.",
+      "For tight curves, measure length a little long and let the waste % cover cuts.",
     ],
   },
   {
