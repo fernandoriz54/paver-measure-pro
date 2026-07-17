@@ -15,6 +15,10 @@ const TOPICS = [
   "Angled Corners",
   "Obstacles",
   "Square Check",
+  "Half Circle",
+  "Quarter Circle",
+  "Triangle",
+  "Combined & Deduct",
 ];
 
 const QUESTIONS = [
@@ -84,6 +88,26 @@ const QUESTIONS = [
   { topic: "Square Check", level: "medium", prompt: "5-12 check on a corner: legs 5 and 12 ft. Diagonal in ft?", answer: 13, tol: 0.2, unit: "ft", explain: "5²+12² = 169, √169 = 13 ft.", viz: { kind: "square", legs: [5, 12] } },
   { topic: "Square Check", level: "hard", prompt: "Scaled 3-4-5: 6 ft and 8 ft legs. What's the diagonal in ft?", answer: 10, tol: 0.2, unit: "ft", explain: "6²+8² = 100, √100 = 10 ft.", viz: { kind: "square", legs: [6, 8] } },
   { topic: "Square Check", level: "hard", prompt: "Scaled 6-8-10: legs 9 ft and 12 ft. Diagonal in ft?", answer: 15, tol: 0.2, unit: "ft", explain: "9²+12² = 225, √225 = 15 ft.", viz: { kind: "square", legs: [9, 12] } },
+
+  // Half Circle
+  { topic: "Half Circle", level: "easy", prompt: "A half-circle planter has radius 4 ft (use 3.14). Area in sq ft (round to 1 decimal)?", answer: 25.1, tol: 0.3, unit: "sq ft", explain: "½ × 3.14 × 4² = ½ × 50.24 = 25.1 sq ft.", viz: { kind: "hcircle", r: 4 } },
+  { topic: "Half Circle", level: "medium", prompt: "Half-circle seating area, radius 6 ft (3.14). Area (round to 1 decimal)?", answer: 56.5, tol: 0.3, unit: "sq ft", explain: "½ × 3.14 × 6² = ½ × 113.04 = 56.5 sq ft.", viz: { kind: "hcircle", r: 6 } },
+  { topic: "Half Circle", level: "hard", prompt: "Half-circle deck, radius 7.5 ft (3.14). Area (round to 1 decimal)?", answer: 88.3, tol: 0.4, unit: "sq ft", explain: "½ × 3.14 × 7.5² = ½ × 176.625 = 88.3 sq ft.", viz: { kind: "hcircle", r: 7.5 } },
+
+  // Quarter Circle
+  { topic: "Quarter Circle", level: "easy", prompt: "A quarter-circle corner bed has radius 4 ft (3.14). Area (round to 1 decimal)?", answer: 12.6, tol: 0.3, unit: "sq ft", explain: "¼ × 3.14 × 4² = ¼ × 50.24 = 12.6 sq ft.", viz: { kind: "qcircle", r: 4 } },
+  { topic: "Quarter Circle", level: "medium", prompt: "Quarter-circle radius 8 ft (3.14). Area (round to 1 decimal)?", answer: 50.2, tol: 0.4, unit: "sq ft", explain: "¼ × 3.14 × 8² = ¼ × 200.96 = 50.2 sq ft.", viz: { kind: "qcircle", r: 8 } },
+  { topic: "Quarter Circle", level: "hard", prompt: "Quarter-circle radius 10.5 ft (3.14). Area (round to 1 decimal)?", answer: 86.5, tol: 0.5, unit: "sq ft", explain: "¼ × 3.14 × 10.5² = ¼ × 345.945 = 86.5 sq ft.", viz: { kind: "qcircle", r: 10.5 } },
+
+  // Triangle
+  { topic: "Triangle", level: "easy", prompt: "A triangular bed: base 8 ft, height 6 ft. Area?", answer: 24, tol: 0.5, unit: "sq ft", explain: "½ × base × height = ½ × 8 × 6 = 24 sq ft.", viz: { kind: "triangle", b: 8, h: 6 } },
+  { topic: "Triangle", level: "medium", prompt: "Triangle: base 12 ft, height 9 ft. Area?", answer: 54, tol: 0.5, unit: "sq ft", explain: "½ × 12 × 9 = 54 sq ft.", viz: { kind: "triangle", b: 12, h: 9 } },
+  { topic: "Triangle", level: "hard", prompt: "Triangle: base 14.5 ft, height 8.25 ft. Area (round to 1 decimal)?", answer: 59.8, tol: 0.3, unit: "sq ft", explain: "½ × 14.5 × 8.25 = 59.81 → 59.8 sq ft.", viz: { kind: "triangle", b: 14.5, h: 8.25 } },
+
+  // Combined & Deduct
+  { topic: "Combined & Deduct", level: "easy", prompt: "Patio = rectangle 10×8 PLUS a half-circle radius 3 (3.14). Deduct a 2×2 pad. Net area (round to 1 decimal)?", answer: 90.1, tol: 0.4, unit: "sq ft", explain: "Rect=80, half-circle=½×3.14×9=14.1 → 94.1. Deduct pad=4 → net 90.1 sq ft.", viz: { kind: "combined", l: 10, w: 8, add: "half", r: 3, deduct: [{ l: 2, w: 2 }] } },
+  { topic: "Combined & Deduct", level: "medium", prompt: "Section = rect 12×10 PLUS quarter-circle radius 6 (3.14). Deduct tree dia 4 ft. Net area (round to 1 decimal)?", answer: 135.7, tol: 0.5, unit: "sq ft", explain: "Rect=120, quarter=¼×3.14×36=28.3 → 148.3. Tree=¼×3.14×16=12.6 → net 135.7 sq ft.", viz: { kind: "combined", l: 12, w: 10, add: "quarter", r: 6, deduct: [{ d: 4 }] } },
+  { topic: "Combined & Deduct", level: "hard", prompt: "Build = rect 15×11 PLUS half-circle radius 5 (3.14). Deduct tree dia 4 ft + planter 3×2. Net area (round to 1 decimal)?", answer: 185.7, tol: 0.5, unit: "sq ft", explain: "Rect=165, half=½×3.14×25=39.3 → 204.3. Deduct tree=12.6 + planter=6 = 18.6 → net 185.7 sq ft.", viz: { kind: "combined", l: 15, w: 11, add: "half", r: 5, deduct: [{ d: 4 }, { l: 3, w: 2 }] } },
 ];
 
 /* ---------- Mini visual for each question ---------- */
@@ -198,6 +222,63 @@ function MiniDiagram({ viz }) {
         ) : (
           <text x="120" y="160" textAnchor="middle" fontSize="10" fill="#334155">both diagonals = {viz.diag}' → square?</text>
         )}
+      </svg>
+    );
+  }
+  if (viz.kind === "hcircle") {
+    return (
+      <svg viewBox="0 0 240 160" className="w-full max-w-xs mx-auto">
+        <path d="M 40 110 A 80 80 0 0 1 200 110 Z" fill="#6366f115" stroke="#4338ca" strokeWidth="2" />
+        <line x1="40" y1="110" x2="200" y2="110" stroke="#b45309" strokeWidth="1.5" />
+        <line x1="120" y1="110" x2="120" y2="30" stroke={A} strokeWidth="1.5" strokeDasharray="4 3" />
+        <text x="128" y="72" fontSize="11" fill={A}>r {viz.r}'</text>
+        <text x="120" y="142" textAnchor="middle" fontSize="10" fill="#334155">diameter {viz.r * 2}'</text>
+      </svg>
+    );
+  }
+  if (viz.kind === "qcircle") {
+    return (
+      <svg viewBox="0 0 240 170" className="w-full max-w-xs mx-auto">
+        <path d="M 50 140 L 50 50 A 90 90 0 0 1 140 140 Z" fill="#6366f115" stroke="#4338ca" strokeWidth="2" />
+        <line x1="50" y1="140" x2="140" y2="140" stroke="#b45309" strokeWidth="1.5" />
+        <line x1="50" y1="140" x2="50" y2="50" stroke="#b45309" strokeWidth="1.5" />
+        <line x1="50" y1="140" x2="114" y2="76" stroke={A} strokeWidth="1.5" strokeDasharray="4 3" />
+        <text x="84" y="104" fontSize="11" fill={A}>r {viz.r}'</text>
+        <text x="95" y="160" textAnchor="middle" fontSize="10" fill="#334155">quarter circle, r {viz.r}'</text>
+      </svg>
+    );
+  }
+  if (viz.kind === "triangle") {
+    return (
+      <svg viewBox="0 0 240 170" className="w-full max-w-xs mx-auto">
+        <polygon points="30,140 210,140 120,30" fill={fill} stroke={F} strokeWidth="2" />
+        <line x1="30" y1="155" x2="210" y2="155" stroke="#b45309" strokeWidth="1.5" />
+        <text x="120" y="152" textAnchor="middle" fontSize="10" fill="#b45309">base {viz.b}'</text>
+        <line x1="120" y1="30" x2="120" y2="140" stroke={A} strokeWidth="1.5" strokeDasharray="4 3" />
+        <text x="128" y="86" fontSize="11" fill={A}>h {viz.h}'</text>
+      </svg>
+    );
+  }
+  if (viz.kind === "combined") {
+    const addHalf = viz.add === "half";
+    return (
+      <svg viewBox="0 0 250 170" className="w-full max-w-xs mx-auto">
+        <rect x="25" y="35" width="150" height="100" fill={fill} stroke={F} strokeWidth="2" />
+        {addHalf ? (
+          <path d="M 175 35 A 40 40 0 0 1 175 135 Z" fill="#6366f115" stroke="#4338ca" strokeWidth="2" />
+        ) : (
+          <path d="M 175 135 L 175 35 A 50 50 0 0 1 225 135 Z" fill="#6366f115" stroke="#4338ca" strokeWidth="2" />
+        )}
+        <text x="100" y="88" textAnchor="middle" fontSize="10" fill="#334155">rect {viz.l}×{viz.w}</text>
+        <text x={addHalf ? 185 : 198} y="88" textAnchor="middle" fontSize="9" fill="#4338ca">{viz.add} r{viz.r}</text>
+        {viz.deduct && viz.deduct.map((d, i) =>
+          d.d ? (
+            <circle key={i} cx={80 + i * 25} cy="70" r={Math.min(d.d * 3, 16)} fill="#f59e0b40" stroke="#b45309" strokeWidth="2" />
+          ) : (
+            <rect key={i} x={60 + i * 28} y={95} width={Math.min(d.w * 5, 22)} height={Math.min(d.l * 5, 22)} fill="#dc262630" stroke={A} strokeWidth="2" />
+          )
+        )}
+        <text x="125" y="158" textAnchor="middle" fontSize="10" fill="#334155">build up, then deduct obstacles</text>
       </svg>
     );
   }
