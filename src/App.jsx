@@ -26,6 +26,7 @@ import IrregularCalc from '@/pages/calculators/IrregularCalc';
 import MaterialCalc from '@/pages/calculators/MaterialCalc';
 import UnitConverter from '@/pages/calculators/UnitConverter';
 import ProductLibrary from '@/pages/ProductLibrary';
+import EstimateBuilder from '@/pages/EstimateBuilder';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -81,6 +82,7 @@ const AuthenticatedApp = () => {
         <Route path="/calc/material" element={<MaterialCalc />} />
         <Route path="/calc/converter" element={<UnitConverter />} />
         <Route path="/products" element={<ProductLibrary />} />
+        <Route path="/builder" element={<EstimateBuilder />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

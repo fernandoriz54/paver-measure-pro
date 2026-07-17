@@ -18,6 +18,7 @@ import {
   Sparkles,
   Shovel,
   Grid3x3,
+  LayoutGrid,
 } from "lucide-react";
 
 const CALC_BUTTONS = [
@@ -69,6 +70,19 @@ export default function Dashboard() {
             <span className="font-bold text-base">Saved Projects</span>
           </button>
         </div>
+
+        {/* Built-in estimate builder */}
+        <button
+          onClick={() => navigate("/builder")}
+          className="w-full flex items-center gap-3 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
+        >
+          <LayoutGrid size={26} />
+          <div className="text-left flex-1">
+            <div className="font-bold text-base">Estimate Builder</div>
+            <div className="text-xs text-emerald-100">Sections A, B, C… + layout plan, auto-calculated</div>
+          </div>
+          <Plus size={20} className="text-emerald-200" />
+        </button>
 
         {/* Calculators */}
         <div>
