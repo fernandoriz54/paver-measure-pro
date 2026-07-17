@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 
 // Generic area calculator with multiple sub-sections + a measurement checklist.
 // props: title, subtitle, icon, checklist (array of strings)
@@ -20,8 +21,10 @@ export default function AreaCalc({ title, subtitle, icon: Icon, checklist = [] }
   const [deductions, setDeductions] = useState([]);
 
   const totalArea = subs.reduce((sum, s) => sum + (s.length * s.width), 0);
-  const wasteResult = applyWaste(totalArea, waste);
-  const warnings = validateMeasurements({ wastePercent: waste }, "area");
+  const activeDeduct = activeDeductionArea(deductions);
+  const netArea = Math.max(0, totalArea - activeDeduct);
+  const wasteResult = applyWaste(netArea, waste);
+  const warnings = validateMeasurements({ grossArea: totalArea, deductions: activeDeduct, wastePercent: waste }, "area");
 
   const updateSub = (id, field, value) => setSubs((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
   const addSub = () => setSubs((prev) => [...prev, { id: Date.now(), label: `Area ${prev.length + 1}`, length: 0, width: 0 }]);
@@ -84,9 +87,13 @@ export default function AreaCalc({ title, subtitle, icon: Icon, checklist = [] }
         <div className="grid grid-cols-1 gap-3">
           <ResultCard title="Total Area" value={formatValue(totalArea, precision)} unit="sq ft"
             formula={subs.map((s) => `${formatValue(s.length * s.width, precision)}`).join(" + ") + ` = ${formatValue(totalArea, precision)}`} />
-          <ResultCard title="Waste Amount" value={formatValue(wasteResult.wasteAmount, precision)} unit="sq ft" />
+          <ResultCard title="Active Deductions" value={formatValue(activeDeduct, precision)} unit="sq ft" />
+          <ResultCard title="Net Area" value={formatValue(netArea, precision)} unit="sq ft"
+            formula={`${formatValue(totalArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)}`} />
+          <ResultCard title="Waste Amount" value={formatValue(wasteResult.wasteAmount, precision)} unit="sq ft"
+            formula={`${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)}`} />
           <ResultCard title="Final Material (with waste)" value={formatValue(wasteResult.total, precision)} unit="sq ft"
-            formula={`${formatValue(totalArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
+            formula={`${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
         </div>
 
         <ObstacleToolkit
@@ -100,8 +107,10 @@ export default function AreaCalc({ title, subtitle, icon: Icon, checklist = [] }
           steps={[
             ...subs.map((s) => `${s.label}: ${formatValue(s.length, precision)} × ${formatValue(s.width, precision)} = ${formatValue(s.length * s.width, precision)} sq ft`),
             `Total = ${formatValue(totalArea, precision)} sq ft`,
-            `Waste = ${formatValue(totalArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
-            `Final = ${formatValue(wasteResult.total, precision)} sq ft`,
+            `Active deductions = ${formatValue(activeDeduct, precision)} sq ft`,
+            `Net = ${formatValue(totalArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)} sq ft`,
+            `Waste = ${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
+            `Final = ${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)} sq ft`,
           ]}
         />
       </div>

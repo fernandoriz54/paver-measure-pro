@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
-import { squareSection } from "@/lib/deductionUtils";
+import { Switch } from "@/components/ui/switch";
+import { squareSection, activeDeductionArea } from "@/lib/deductionUtils";
 
 export default function MaterialCalc() {
   const [area, setArea] = useState(0);
@@ -17,6 +18,7 @@ export default function MaterialCalc() {
   const [selectedId, setSelectedId] = useState("");
   const [product, setProduct] = useState(null);
   const [deductions, setDeductions] = useState([]);
+  const [alreadyNet, setAlreadyNet] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -36,14 +38,25 @@ export default function MaterialCalc() {
     setProduct(found || null);
   };
 
-  const wasteResult = applyWaste(area, waste);
+  const activeDeduct = alreadyNet ? 0 : activeDeductionArea(deductions);
+  const netArea = Math.max(0, area - activeDeduct);
+  const wasteResult = applyWaste(netArea, waste);
   const material = product ? calcMaterial(wasteResult.total, product) : null;
   const warnings = validateMeasurements({ wastePercent: waste }, "material");
+  if (alreadyNet && deductions.length > 0) warnings.push("This imported quantity already includes deductions — obstacle subtraction is off.");
 
   return (
     <CalcShell title="Material Quantity" subtitle="Pieces, pallets & estimated cost" icon={Package}>
       <div className="space-y-4">
         <MeasurementInput label="Total Area" onChange={setArea} />
+
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <div>
+            <div className="text-sm font-semibold text-amber-800">Imported area already includes deductions</div>
+            <div className="text-xs text-amber-700">Turn on if this net area came from another calculator.</div>
+          </div>
+          <Switch checked={alreadyNet} onCheckedChange={setAlreadyNet} />
+        </div>
 
         <div>
           <Label className="text-base font-semibold">Select Product</Label>
@@ -92,6 +105,8 @@ export default function MaterialCalc() {
             </div>
 
             <div className="grid grid-cols-1 gap-3">
+              <ResultCard title="Net Area (after deductions)" value={formatValue(netArea, "hundredth")} unit="sq ft"
+                formula={alreadyNet ? "Imported net area — no deductions applied" : `${formatValue(area, "hundredth")} − ${formatValue(activeDeduct, "hundredth")} = ${formatValue(netArea, "hundredth")}`} />
               <ResultCard title="Area (with waste)" value={formatValue(wasteResult.total, "hundredth")} unit="sq ft" />
               <ResultCard title="Pieces Required" value={material.piecesRequired} unit="pieces"
                 formula={`${formatValue(wasteResult.total, "hundredth")} ÷ ${formatValue(material.sqftPerPiece, "hundredth")} sq ft/piece → round up`} />

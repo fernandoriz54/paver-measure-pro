@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import VisualPlan from "@/components/VisualPlan";
 import ExportBar from "@/components/ExportBar";
 import SaveToProject from "@/components/SaveToProject";
+import DeductionPanel from "@/components/DeductionPanel";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 
 const SHAPE_TYPES = [
   { value: "rectangle", label: "Rectangle", needs: ["length", "width"] },
@@ -137,10 +139,15 @@ export default function CombinedCalc() {
   const removeDeduct = (secId, did) =>
     setSections((s) => s.map((sec) => (sec.id === secId ? { ...sec, deductions: sec.deductions.filter((d) => d.id !== did) } : sec)));
 
+  // Per-section setter for the shared DeductionPanel (accepts a function or array).
+  const setSectionDeductions = (secId) => (updater) => {
+    setSections((s) => s.map((sec) => (sec.id === secId ? { ...sec, deductions: typeof updater === "function" ? updater(sec.deductions) : updater } : sec)));
+  };
+
   const computed = sections.map((sec) => {
     const gross = shapeGross(sec.type, sec.params);
-    const deductions = sec.deductions.map((d) => ({ ...d, area: deductArea(d.kind, d.params) }));
-    const totalDeduct = deductions.reduce((sum, d) => sum + d.area, 0);
+    const deductions = sec.deductions.map((d) => ({ ...d, area: deductArea(d.kind, d.params, d.quantity || 1) }));
+    const totalDeduct = activeDeductionArea(sec.deductions);
     return { ...sec, gross, deductions, totalDeduct, net: Math.max(0, gross - totalDeduct) };
   });
   const grandGross = computed.reduce((s, sec) => s + sec.gross, 0);
@@ -230,56 +237,7 @@ export default function CombinedCalc() {
                 {shapeFormula(sec.type, sec.params, sec.gross)}
               </div>
 
-              {/* Deductions */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-600">Deductions</span>
-                  <button onClick={() => addDeduct(sec.id)} className="flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
-                    <Minus size={14} /> Add obstacle
-                  </button>
-                </div>
-                {sec.deductions.map((d) => {
-                  const preset = presetByName(d.name) || DEDUCT_PRESETS[0];
-                  return (
-                    <div key={d.id} className="bg-rose-50/60 border border-rose-200 rounded-lg p-2 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={d.name}
-                          onChange={(e) => {
-                            const np = presetByName(e.target.value);
-                            const fresh = {};
-                            np.needs.forEach((k) => (fresh[k] = 0));
-                            updateDeduct(sec.id, d.id, { name: e.target.value, kind: np.kind, params: fresh });
-                          }}
-                          className="text-xs font-semibold h-9 rounded-md border border-input bg-transparent px-2"
-                        >
-                          {DEDUCT_PRESETS.map((p) => (
-                            <option key={p.name} value={p.name}>{p.name}</option>
-                          ))}
-                        </select>
-                        <button onClick={() => removeDeduct(sec.id, d.id)} className="ml-auto p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {preset.needs.map((k) => (
-                          <div key={k}>
-                            <Label className="text-xs">{labelFor(k)}</Label>
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              value={d.params[k]}
-                              onChange={(e) => updateDeductParam(sec.id, d.id, k, parseFloat(e.target.value) || 0)}
-                              className="h-10 text-sm"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="text-xs text-rose-600 font-mono">−{deductFormula(d.kind, d.params, d.area)} sq ft</div>
-                    </div>
-                  );
-                })}
-              </div>
+              <DeductionPanel deductions={sec.deductions} setDeductions={setSectionDeductions(sec.id)} />
             </div>
           );
         })}

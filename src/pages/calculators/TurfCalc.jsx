@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
-import { squareSection } from "@/lib/deductionUtils";
+import { squareSection, activeDeductionArea } from "@/lib/deductionUtils";
 
 export default function TurfCalc() {
   const [grossArea, setGrossArea] = useState(0);
@@ -25,7 +25,8 @@ export default function TurfCalc() {
   const [deductions, setDeductions] = useState([]);
 
   const totalDeductions = concreteArea + walkwayArea + treeWellArea + planterArea + paverBorderArea + otherDeductions;
-  const netTurf = Math.max(0, grossArea - totalDeductions);
+  const activeDeduct = activeDeductionArea(deductions);
+  const netTurf = Math.max(0, grossArea - totalDeductions - activeDeduct);
   const wasteResult = applyWaste(netTurf, waste);
   const totalTurf = wasteResult.total;
 
@@ -83,7 +84,7 @@ export default function TurfCalc() {
           <ResultCard title="Total Deductions" value={formatValue(totalDeductions, precision)} unit="sq ft"
             formula={`${formatValue(concreteArea, precision)} + ${formatValue(walkwayArea, precision)} + ${formatValue(treeWellArea, precision)} + ${formatValue(planterArea, precision)} + ${formatValue(paverBorderArea, precision)} + ${formatValue(otherDeductions, precision)} = ${formatValue(totalDeductions, precision)}`} />
           <ResultCard title="Net Turf Area" value={formatValue(netTurf, precision)} unit="sq ft"
-            formula={`${formatValue(grossArea, precision)} − ${formatValue(totalDeductions, precision)} = ${formatValue(netTurf, precision)}`} />
+            formula={`${formatValue(grossArea, precision)} − ${formatValue(totalDeductions, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netTurf, precision)}`} />
           <ResultCard title="Waste Amount" value={formatValue(wasteResult.wasteAmount, precision)} unit="sq ft"
             formula={`${formatValue(netTurf, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)}`} />
           <ResultCard title="Final Turf Quantity" value={formatValue(totalTurf, precision)} unit="sq ft"
@@ -104,7 +105,7 @@ export default function TurfCalc() {
           steps={[
             `Gross = ${formatValue(grossArea, precision)} sq ft`,
             `Deductions = ${formatValue(totalDeductions, precision)} sq ft`,
-            `Net = ${formatValue(grossArea, precision)} − ${formatValue(totalDeductions, precision)} = ${formatValue(netTurf, precision)} sq ft`,
+            `Net = ${formatValue(grossArea, precision)} − ${formatValue(totalDeductions, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netTurf, precision)} sq ft`,
             `Waste = ${formatValue(netTurf, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
             `Final = ${formatValue(netTurf, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(totalTurf, precision)} sq ft`,
             `Roll lengths = ${formatValue(totalTurf, precision)} ÷ ${rollWidth} ft = ${formatValue(rollLengths, precision)} lin ft`,

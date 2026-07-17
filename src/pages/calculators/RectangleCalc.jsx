@@ -4,6 +4,7 @@ import CalcShell from "@/components/CalcShell";
 import MeasurementInput from "@/components/MeasurementInput";
 import { ResultCard, FormulaBreakdown, WarningList } from "@/components/ResultCard";
 import { calcRectangle, applyWaste, validateMeasurements, formatValue } from "@/lib/measurementUtils";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
@@ -16,8 +17,10 @@ export default function RectangleCalc() {
   const [deductions, setDeductions] = useState([]);
 
   const result = calcRectangle(length, width);
-  const wasteResult = applyWaste(result.area, waste);
-  const warnings = validateMeasurements({ wastePercent: waste }, "rectangle");
+  const activeDeduct = activeDeductionArea(deductions);
+  const netArea = Math.max(0, result.area - activeDeduct);
+  const wasteResult = applyWaste(netArea, waste);
+  const warnings = validateMeasurements({ grossArea: result.area, deductions: activeDeduct, wastePercent: waste }, "rectangle");
 
   return (
     <CalcShell title="Rectangle & Square" subtitle="Area = Length × Width" icon={Square}>
@@ -67,16 +70,23 @@ export default function RectangleCalc() {
             formula={`2 × (${formatValue(length, precision)} + ${formatValue(width, precision)}) = ${formatValue(result.perimeter, precision)}`}
           />
           <ResultCard
+            title="Active Deductions"
+            value={formatValue(activeDeduct, precision)}
+            unit="sq ft"
+            formula={`${formatValue(result.area, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)}`}
+          />
+          <ResultCard title="Net Area" value={formatValue(netArea, precision)} unit="sq ft" />
+          <ResultCard
             title="Waste Amount"
             value={formatValue(wasteResult.wasteAmount, precision)}
             unit="sq ft"
-            formula={`${formatValue(result.area, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)}`}
+            formula={`${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)}`}
           />
           <ResultCard
             title="Total Material (with waste)"
             value={formatValue(wasteResult.total, precision)}
             unit="sq ft"
-            formula={`${formatValue(result.area, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`}
+            formula={`${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`}
           />
         </div>
 
@@ -91,10 +101,12 @@ export default function RectangleCalc() {
           steps={[
             `Length: ${formatValue(length, precision)} ft`,
             `Width: ${formatValue(width, precision)} ft`,
-            `Area = ${formatValue(length, precision)} × ${formatValue(width, precision)} = ${formatValue(result.area, precision)} sq ft`,
+            `Gross area = ${formatValue(length, precision)} × ${formatValue(width, precision)} = ${formatValue(result.area, precision)} sq ft`,
             `Perimeter = 2 × (${formatValue(length, precision)} + ${formatValue(width, precision)}) = ${formatValue(result.perimeter, precision)} lin ft`,
-            `Waste = ${formatValue(result.area, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
-            `Total = ${formatValue(result.area, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)} sq ft`,
+            `Active deductions = ${formatValue(activeDeduct, precision)} sq ft`,
+            `Net area = ${formatValue(result.area, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)} sq ft`,
+            `Waste = ${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
+            `Final = ${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)} sq ft`,
           ]}
         />
       </div>

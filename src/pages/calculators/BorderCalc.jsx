@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { activeDeductionLinear } from "@/lib/deductionUtils";
 
 export default function BorderCalc() {
   const [linearFeet, setLinearFeet] = useState(203.89);
@@ -19,7 +20,9 @@ export default function BorderCalc() {
   const [precision] = useState("hundredth");
   const [deductions, setDeductions] = useState([]);
 
-  const result = calcBorder(linearFeet, borderWidthIn, rows);
+  const excludedLinear = activeDeductionLinear(deductions);
+  const netLinear = Math.max(0, linearFeet - excludedLinear);
+  const result = calcBorder(netLinear, borderWidthIn, rows);
   const wasteResult = applyWaste(result.borderArea, waste);
   const widthFt = borderWidthIn / 12;
   const pieces = pieceLength > 0 ? Math.ceil(wasteResult.total / ((pieceLength / 12) * widthFt)) : 0;
@@ -82,7 +85,8 @@ export default function BorderCalc() {
         <WarningList warnings={warnings} />
 
         <div className="grid grid-cols-1 gap-3">
-          <ResultCard title="Border Linear Footage" value={formatValue(linearFeet, precision)} unit="lin ft" />
+          <ResultCard title="Border Linear Footage" value={formatValue(netLinear, precision)} unit="lin ft"
+            formula={`${formatValue(linearFeet, precision)} − ${formatValue(excludedLinear, precision)} excluded = ${formatValue(netLinear, precision)}`} />
           <ResultCard title="Border Width" value={formatValue(widthFt, precision)} unit="ft"
             formula={`${borderWidthIn} in ÷ 12 = ${formatValue(widthFt, precision)} ft`} />
           <ResultCard title="Border Square Footage" value={formatValue(result.borderArea, precision)} unit="sq ft"
@@ -105,9 +109,11 @@ export default function BorderCalc() {
 
         <FormulaBreakdown
           steps={[
-            `Linear footage = ${formatValue(linearFeet, precision)} lin ft`,
+            `Gross linear footage = ${formatValue(linearFeet, precision)} lin ft`,
+            `Excluded border length = ${formatValue(excludedLinear, precision)} lin ft`,
+            `Net linear = ${formatValue(linearFeet, precision)} − ${formatValue(excludedLinear, precision)} = ${formatValue(netLinear, precision)} lin ft`,
             `Border width = ${borderWidthIn} in = ${formatValue(widthFt, precision)} ft`,
-            `Border area = ${formatValue(linearFeet, precision)} × ${formatValue(widthFt, precision)}${rows > 1 ? ` × ${rows}` : ""} = ${formatValue(result.borderArea, precision)} sq ft`,
+            `Border area = ${formatValue(netLinear, precision)} × ${formatValue(widthFt, precision)}${rows > 1 ? ` × ${rows}` : ""} = ${formatValue(result.borderArea, precision)} sq ft`,
             `Waste = ${formatValue(result.borderArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
             `Final = ${formatValue(result.borderArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)} sq ft`,
           ]}

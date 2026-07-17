@@ -3,8 +3,10 @@ import { Triangle } from "lucide-react";
 import CalcShell from "@/components/CalcShell";
 import MeasurementInput from "@/components/MeasurementInput";
 import { ResultCard, FormulaBreakdown, WarningList } from "@/components/ResultCard";
-import { calcTriangle, calcTriangleSides, validateMeasurements, formatValue } from "@/lib/measurementUtils";
+import { calcTriangle, calcTriangleSides, applyWaste, validateMeasurements, formatValue } from "@/lib/measurementUtils";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
 
 export default function TriangleCalc() {
@@ -14,6 +16,7 @@ export default function TriangleCalc() {
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
   const [c, setC] = useState(0);
+  const [waste, setWaste] = useState(5);
   const [precision] = useState("hundredth");
   const [deductions, setDeductions] = useState([]);
 
@@ -27,6 +30,9 @@ export default function TriangleCalc() {
   }
 
   const warnings = validateMeasurements({}, "triangle");
+  const activeDeduct = activeDeductionArea(deductions);
+  const netArea = Math.max(0, result.area - activeDeduct);
+  const wasteResult = applyWaste(netArea, waste);
 
   return (
     <CalcShell title="Triangle" subtitle="Area = Base × Height ÷ 2" icon={Triangle}>
@@ -61,6 +67,18 @@ export default function TriangleCalc() {
 
         <WarningList warnings={warnings} />
 
+        <div>
+          <Label className="text-base font-semibold">Waste %</Label>
+          <Select value={String(waste)} onValueChange={(v) => setWaste(Number(v))}>
+            <SelectTrigger className="h-12 text-base mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[5, 7, 10, 12, 15].map((w) => (
+                <SelectItem key={w} value={String(w)}>{w}%</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <ResultCard
           title="Area"
           value={formatValue(result.area, precision)}
@@ -75,6 +93,13 @@ export default function TriangleCalc() {
             formula={`${a} + ${b} + ${c} = ${formatValue(result.perimeter, precision)}`}
           />
         )}
+        <ResultCard title="Active Deductions" value={formatValue(activeDeduct, precision)} unit="sq ft"
+          formula={`${formatValue(result.area, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)}`} />
+        <ResultCard title="Net Area" value={formatValue(netArea, precision)} unit="sq ft" />
+        <ResultCard title="Waste Amount" value={formatValue(wasteResult.wasteAmount, precision)} unit="sq ft"
+          formula={`${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)}`} />
+        <ResultCard title="Final Material (with waste)" value={formatValue(wasteResult.total, precision)} unit="sq ft"
+          formula={`${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
 
         <ObstacleToolkit
           grossArea={result.area}

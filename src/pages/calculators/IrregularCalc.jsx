@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
-import { totalDeductionArea } from "@/lib/deductionUtils";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 
 const SHAPE_TYPES = [
   { value: "rectangle", label: "Rectangle / Square" },
@@ -52,7 +52,7 @@ export default function IrregularCalc() {
   const [precision] = useState("hundredth");
 
   const grossArea = sections.reduce((sum, s) => sum + computeShape(s.shape, s), 0);
-  const totalDeductions = totalDeductionArea(deductions);
+  const totalDeductions = activeDeductionArea(deductions);
   const netArea = Math.max(0, grossArea - totalDeductions);
   const wasteResult = applyWaste(netArea, waste);
 

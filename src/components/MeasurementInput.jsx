@@ -6,11 +6,11 @@ import QuickUnitConverter from "@/components/converter/QuickUnitConverter";
 
 // Feet + Inches input with auto-conversion to decimal feet.
 // props: label, onChange(decimalValue), value (decimal), allowDecimal (default true)
-export default function MeasurementInput({ label, onChange, value, hint }) {
+export default function MeasurementInput({ label, onChange, value, hint, defaultMode = "fi" }) {
   const [feet, setFeet] = useState("");
   const [inches, setInches] = useState("");
   const [decimal, setDecimal] = useState("");
-  const [mode, setMode] = useState("fi"); // "fi" = feet+inches, "dec" = decimal feet
+  const [mode, setMode] = useState(defaultMode); // "fi" = feet+inches, "dec" = decimal feet
 
   // When value changes externally, sync (decimal mode)
   useEffect(() => {

@@ -16,7 +16,7 @@ import {
   WASTE_OPTIONS,
 } from "@/lib/measurementUtils";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
-import { totalDeductionArea } from "@/lib/deductionUtils";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
@@ -78,7 +78,7 @@ export default function EstimateBuilder() {
   const totalPerim = sections.reduce((sum, s) => sum + (computedMap[s.id]?.perimeter || 0), 0);
   const wasteArea = totalArea * (waste / 100);
   const totalWithWaste = totalArea + wasteArea;
-  const deductionAmount = totalDeductionArea(deductions);
+  const deductionAmount = activeDeductionArea(deductions);
   const finalTotal = totalWithWaste - deductionAmount;
 
   const vizSections = sections.map((s) => {

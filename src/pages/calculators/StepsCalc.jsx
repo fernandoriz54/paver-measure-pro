@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
-import { squareSection } from "@/lib/deductionUtils";
+import { squareSection, activeDeductionArea, activeDeductionLinear } from "@/lib/deductionUtils";
 
 export default function StepsCalc() {
   const [numSteps, setNumSteps] = useState(3);
@@ -23,10 +23,14 @@ export default function StepsCalc() {
   const [deductions, setDeductions] = useState([]);
 
   const result = calcSteps({ numSteps, totalHeight: totalHeight / 12, stepWidth, treadDepth: treadDepth / 12, landingDepth: landingDepth / 12, numLandings });
+  const activeDeduct = activeDeductionArea(deductions, ["path"]); // square-foot deductions only
+  const excludedBullnose = activeDeductionLinear(deductions); // linear (bullnose) exclusions
   const bullnoseLinear = stepWidth * numSteps;
-  const bullnosePieces = bullnosePieceLen > 0 ? Math.ceil(bullnoseLinear / (bullnosePieceLen / 12)) : 0;
+  const netBullnoseLinear = Math.max(0, bullnoseLinear - excludedBullnose);
+  const bullnosePieces = bullnosePieceLen > 0 ? Math.ceil(netBullnoseLinear / (bullnosePieceLen / 12)) : 0;
   const sideEdgeLinear = (result.totalDepth) * 2;
-  const stepWaste = applyWaste(result.totalStepArea, waste);
+  const netStepArea = Math.max(0, result.totalStepArea - activeDeduct);
+  const stepWaste = applyWaste(netStepArea, waste);
 
   const warnings = validateMeasurements({ totalHeight: totalHeight / 12, numSteps, wastePercent: waste }, "steps");
 
@@ -93,16 +97,17 @@ export default function StepsCalc() {
             formula={`${formatValue(treadDepth / 12, precision)} × ${stepWidth} × ${numSteps} = ${formatValue(result.stepSurfaceArea, precision)}`} />
           <ResultCard title="Riser Face Area" value={formatValue(result.riserFaceArea, precision)} unit="sq ft"
             formula={`${formatValue(result.risePerStep, precision)} × ${stepWidth} × ${numSteps} = ${formatValue(result.riserFaceArea, precision)}`} />
-          <ResultCard title="Total Step Area" value={formatValue(result.totalStepArea, precision)} unit="sq ft" />
-          <ResultCard title="Bullnose Linear Footage" value={formatValue(bullnoseLinear, precision)} unit="lin ft"
-            formula={`${stepWidth} × ${numSteps} (exposed front edges) = ${formatValue(bullnoseLinear, precision)}`} />
+          <ResultCard title="Net Step Area (after deductions)" value={formatValue(netStepArea, precision)} unit="sq ft"
+            formula={`${formatValue(result.totalStepArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netStepArea, precision)}`} />
+          <ResultCard title="Bullnose Linear Footage" value={formatValue(netBullnoseLinear, precision)} unit="lin ft"
+            formula={`${formatValue(bullnoseLinear, precision)} − ${formatValue(excludedBullnose, precision)} excluded = ${formatValue(netBullnoseLinear, precision)}`} />
           <ResultCard title="Side-Edge Linear" value={formatValue(sideEdgeLinear, precision)} unit="lin ft" />
           {bullnosePieceLen > 0 && (
             <ResultCard title="Bullnose Pieces Needed" value={bullnosePieces} unit="pieces"
               formula={`${formatValue(bullnoseLinear, precision)} ÷ ${formatValue(bullnosePieceLen / 12, precision)} → round up`} />
           )}
           <ResultCard title="Final Material (with waste)" value={formatValue(stepWaste.total, precision)} unit="sq ft"
-            formula={`${formatValue(result.totalStepArea, precision)} + ${formatValue(stepWaste.wasteAmount, precision)} = ${formatValue(stepWaste.total, precision)}`} />
+            formula={`${formatValue(netStepArea, precision)} + ${formatValue(stepWaste.wasteAmount, precision)} = ${formatValue(stepWaste.total, precision)}`} />
         </div>
 
         <ObstacleToolkit
@@ -118,7 +123,11 @@ export default function StepsCalc() {
             `Rise per step = ${formatValue(totalHeight / 12, precision)} ÷ ${numSteps} = ${formatValue(result.risePerStep, precision)} ft`,
             `Total run = ${formatValue(treadDepth / 12, precision)} × ${numSteps} = ${formatValue(result.totalRun, precision)} ft`,
             `Step surface = ${formatValue(treadDepth / 12, precision)} × ${stepWidth} × ${numSteps} = ${formatValue(result.stepSurfaceArea, precision)} sq ft`,
-            `Bullnose = ${stepWidth} × ${numSteps} = ${formatValue(bullnoseLinear, precision)} lin ft`,
+            `Active area deductions = ${formatValue(activeDeduct, precision)} sq ft`,
+            `Net step area = ${formatValue(result.totalStepArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netStepArea, precision)} sq ft`,
+            `Bullnose gross = ${stepWidth} × ${numSteps} = ${formatValue(bullnoseLinear, precision)} lin ft`,
+            `Excluded bullnose = ${formatValue(excludedBullnose, precision)} lin ft`,
+            `Net bullnose = ${formatValue(netBullnoseLinear, precision)} lin ft`,
           ]}
         />
       </div>

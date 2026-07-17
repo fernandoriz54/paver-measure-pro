@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
-import { squareSection } from "@/lib/deductionUtils";
+import { squareSection, activeDeductionArea } from "@/lib/deductionUtils";
 
 export default function PaverCalc() {
   const [totalArea, setTotalArea] = useState(0);
@@ -24,7 +24,8 @@ export default function PaverCalc() {
   const [precision] = useState("hundredth");
   const [deductions, setDeductions] = useState([]);
 
-  const netField = Math.max(0, totalArea - deductedArea - borderArea - accentArea);
+  const activeDeduct = activeDeductionArea(deductions);
+  const netField = Math.max(0, totalArea - deductedArea - borderArea - accentArea - activeDeduct);
   const fieldWaste = applyWaste(netField, waste);
   const borderWaste = applyWaste(borderArea, waste);
   const accentWaste = applyWaste(accentArea, waste);
@@ -116,7 +117,7 @@ export default function PaverCalc() {
 
         <div className="grid grid-cols-1 gap-3">
           <ResultCard title="Net Paver Field" value={formatValue(netField, precision)} unit="sq ft"
-            formula={`${formatValue(totalArea, precision)} − ${formatValue(deductedArea, precision)} − ${formatValue(borderArea, precision)} − ${formatValue(accentArea, precision)} = ${formatValue(netField, precision)}`} />
+            formula={`${formatValue(totalArea, precision)} − ${formatValue(deductedArea, precision)} − ${formatValue(borderArea, precision)} − ${formatValue(accentArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netField, precision)}`} />
           <ResultCard title="Border Area" value={formatValue(borderArea, precision)} unit="sq ft" />
           <ResultCard title="Accent Area" value={formatValue(accentArea, precision)} unit="sq ft" />
           <ResultCard title="Total Paver Area (with waste)" value={formatValue(totalPaver, precision)} unit="sq ft"
@@ -141,7 +142,7 @@ export default function PaverCalc() {
 
         <FormulaBreakdown
           steps={[
-            `Net field = ${formatValue(totalArea, precision)} − ${formatValue(deductedArea, precision)} − ${formatValue(borderArea, precision)} − ${formatValue(accentArea, precision)} = ${formatValue(netField, precision)} sq ft`,
+            `Net field = ${formatValue(totalArea, precision)} − ${formatValue(deductedArea, precision)} − ${formatValue(borderArea, precision)} − ${formatValue(accentArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netField, precision)} sq ft`,
             `Field waste = ${formatValue(netField, precision)} × ${waste}% = ${formatValue(fieldWaste.wasteAmount, precision)} sq ft`,
             `Field total = ${formatValue(netField, precision)} + ${formatValue(fieldWaste.wasteAmount, precision)} = ${formatValue(fieldWaste.total, precision)} sq ft`,
             sqftPerPiece > 0 ? `Pieces per sq ft = 144 ÷ (${pieceLength} × ${pieceWidth}) = ${formatValue(1 / sqftPerPiece, precision)}` : "",

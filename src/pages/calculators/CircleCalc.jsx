@@ -10,7 +10,9 @@ import {
   validateMeasurements,
   formatValue,
   PI,
+  applyWaste,
 } from "@/lib/measurementUtils";
+import { activeDeductionArea } from "@/lib/deductionUtils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +24,7 @@ export default function CircleCalc() {
   const [radius, setRadius] = useState(0);
   const [circumference, setCircumference] = useState(0);
   const [percent, setPercent] = useState(100);
+  const [waste, setWaste] = useState(5);
   const [precision, setPrecision] = useState("hundredth");
   const [deductions, setDeductions] = useState([]);
 
@@ -32,6 +35,9 @@ export default function CircleCalc() {
 
   const isPartial = percent !== 100;
   const partialArea = (result.area * percent) / 100;
+  const activeDeduct = activeDeductionArea(deductions);
+  const netArea = Math.max(0, partialArea - activeDeduct);
+  const wasteResult = applyWaste(netArea, waste);
   const warnings = validateMeasurements(
     mode === "diameter" ? { diameter } : mode === "radius" ? { radius } : { circumference },
     "circle"
@@ -99,6 +105,18 @@ export default function CircleCalc() {
           </Select>
         </div>
 
+        <div>
+          <Label className="text-base font-semibold">Waste %</Label>
+          <Select value={String(waste)} onValueChange={(v) => setWaste(Number(v))}>
+            <SelectTrigger className="h-12 text-base mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[5, 7, 10, 12, 15].map((w) => (
+                <SelectItem key={w} value={String(w)}>{w}%</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
           <strong>Note:</strong> Diameter × 3.1416 gives the <em>circumference</em> (linear feet around the edge), not the area. Area uses π × Radius².
         </div>
@@ -134,6 +152,13 @@ export default function CircleCalc() {
                 : `${PI} × ${formatValue(result.radius, precision)}² = ${formatValue(partialArea, precision)}`
             }
           />
+          <ResultCard title="Active Deductions" value={formatValue(activeDeduct, precision)} unit="sq ft"
+            formula={`${formatValue(partialArea, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)}`} />
+          <ResultCard title="Net Area" value={formatValue(netArea, precision)} unit="sq ft" />
+          <ResultCard title="Waste Amount" value={formatValue(wasteResult.wasteAmount, precision)} unit="sq ft"
+            formula={`${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)}`} />
+          <ResultCard title="Final Material (with waste)" value={formatValue(wasteResult.total, precision)} unit="sq ft"
+            formula={`${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
         </div>
 
         <ObstacleToolkit

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { ChevronDown, Move } from "lucide-react";
 import DeductionPanel from "@/components/DeductionPanel";
 import VisualPlan from "@/components/VisualPlan";
-import { shapeGross, totalDeductionArea, fmt } from "@/lib/deductionUtils";
+import { shapeGross, totalDeductionArea, activeDeductionArea, fmt } from "@/lib/deductionUtils";
 
 // One reusable toolkit dropped into any calculator or the Estimate Builder.
 // Combines the obstacle preset editor with the drag-and-drop visualizer, and
@@ -23,7 +23,9 @@ export default function ObstacleToolkit({
 }) {
   const [open, setOpen] = useState(true);
   const totalDeduct = totalDeductionArea(deductions);
-  const net = Math.max(0, grossArea - totalDeduct);
+  const activeDeduct = activeDeductionArea(deductions);
+  const inactiveCount = deductions.filter((d) => d.subtract === false).length;
+  const net = Math.max(0, grossArea - activeDeduct);
 
   const vizSections = useMemo(() => {
     if (!sections.length) return [];
@@ -33,11 +35,11 @@ export default function ObstacleToolkit({
         ...s,
         gross,
         // attach the shared obstacle pool to the first section so they render
-        deductions: i === 0 ? deductions : [],
-        net: Math.max(0, gross - (i === 0 ? totalDeduct : 0)),
+        deductions: i === 0 ? deductions.filter((d) => !d.hidden) : [],
+        net: Math.max(0, gross - (i === 0 ? activeDeduct : 0)),
       };
     });
-  }, [sections, deductions, totalDeduct]);
+  }, [sections, deductions, activeDeduct]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -54,7 +56,7 @@ export default function ObstacleToolkit({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] uppercase text-slate-400">Net after obstacles</div>
+            <div className="text-[10px] uppercase text-slate-400">Net (active deductions)</div>
             <div className="font-extrabold text-indigo-700">{fmt(net)} <span className="text-xs">sf</span></div>
           </div>
           <ChevronDown size={20} className={`text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -71,7 +73,7 @@ export default function ObstacleToolkit({
             </div>
             <div className="bg-rose-50 rounded-lg p-2">
               <div className="text-[10px] uppercase text-rose-500">Deduct</div>
-              <div className="font-bold text-rose-700">−{fmt(totalDeduct)}<span className="text-xs"> sf</span></div>
+              <div className="font-bold text-rose-700">−{fmt(activeDeduct)}<span className="text-xs"> sf</span></div>
             </div>
             <div className="bg-emerald-50 rounded-lg p-2">
               <div className="text-[10px] uppercase text-emerald-600">Net</div>
@@ -80,6 +82,12 @@ export default function ObstacleToolkit({
           </div>
 
           <DeductionPanel deductions={deductions} setDeductions={setDeductions} />
+
+          {inactiveCount > 0 && (
+            <div className="text-[11px] text-slate-500 bg-slate-50 rounded-md px-2 py-1.5">
+              {inactiveCount} obstacle(s) shown on the plan but not subtracted (toggle off).
+            </div>
+          )}
 
           {vizSections.length > 0 && <VisualPlan sections={vizSections} />}
         </div>
