@@ -61,6 +61,8 @@ export default function EstimateBuilder() {
   const { toast } = useToast();
   const [sections, setSections] = useState([newSection("A"), newSection("B"), newSection("C")]);
   const [waste, setWaste] = useState(10);
+  const [deduction, setDeduction] = useState(0);
+  const [customDeduction, setCustomDeduction] = useState("");
   const [clientName, setClientName] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -76,6 +78,9 @@ export default function EstimateBuilder() {
   const totalPerim = sections.reduce((sum, s) => sum + (computedMap[s.id]?.perimeter || 0), 0);
   const wasteArea = totalArea * (waste / 100);
   const totalWithWaste = totalArea + wasteArea;
+  const deductionPercent = deduction === "custom" ? (parseFloat(customDeduction) || 0) : deduction;
+  const deductionAmount = totalWithWaste * (deductionPercent / 100);
+  const finalTotal = totalWithWaste - deductionAmount;
 
   const relabel = (list) => list.map((s, i) => ({ ...s, label: LETTERS[i] || `S${i + 1}` }));
 
@@ -240,7 +245,7 @@ export default function EstimateBuilder() {
             </div>
           </div>
           <div>
-            <Label className="text-emerald-100 text-sm">Waste %</Label>
+            <Label className="text-emerald-100 text-sm">Waste % (adds)</Label>
             <div className="flex gap-2 mt-1 flex-wrap">
               {WASTE_OPTIONS.map((w) => (
                 <button
@@ -255,12 +260,58 @@ export default function EstimateBuilder() {
               ))}
             </div>
           </div>
+          <div>
+            <Label className="text-emerald-100 text-sm">Remove % (deduction)</Label>
+            <div className="flex gap-2 mt-1 flex-wrap items-center">
+              {[0, 5, 10, 15, 20].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => { setDeduction(d); setCustomDeduction(""); }}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                    deduction === d ? "bg-rose-400 text-white" : "bg-emerald-700 text-white"
+                  }`}
+                >
+                  {d === 0 ? "None" : `${d}%`}
+                </button>
+              ))}
+              <button
+                onClick={() => setDeduction("custom")}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                  deduction === "custom" ? "bg-rose-400 text-white" : "bg-emerald-700 text-white"
+                }`}
+              >
+                Custom
+              </button>
+              {deduction === "custom" && (
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={customDeduction}
+                  onChange={(e) => setCustomDeduction(e.target.value)}
+                  className="h-9 w-24 bg-white text-emerald-900"
+                  placeholder="%"
+                />
+              )}
+            </div>
+          </div>
+          {deductionPercent > 0 && (
+            <div className="bg-rose-500/90 text-white rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold">Less {deductionPercent}% deduction</div>
+                <div className="text-xs text-rose-100">− {formatValue(deductionAmount, "hundredth")} sf</div>
+              </div>
+              <div className="text-lg font-extrabold">{formatValue(totalWithWaste, "hundredth")} sf</div>
+            </div>
+          )}
           <div className="bg-amber-400 text-emerald-900 rounded-xl p-3 flex items-center justify-between">
             <div>
-              <div className="text-xs font-semibold">Total w/ {waste}% waste</div>
-              <div className="text-xs text-emerald-800">incl. {formatValue(wasteArea, "hundredth")} sf waste</div>
+              <div className="text-xs font-semibold">Final total</div>
+              <div className="text-xs text-emerald-800">
+                {formatValue(totalArea, "hundredth")} sf + {formatValue(wasteArea, "hundredth")} waste
+                {deductionPercent > 0 && ` − ${formatValue(deductionAmount, "hundredth")} ded`}
+              </div>
             </div>
-            <div className="text-2xl font-extrabold">{formatValue(totalWithWaste, "hundredth")} sf</div>
+            <div className="text-2xl font-extrabold">{formatValue(finalTotal, "hundredth")} sf</div>
           </div>
         </div>
 
