@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { totalDeductionArea } from "@/lib/deductionUtils";
 
 const SHAPE_TYPES = [
   { value: "rectangle", label: "Rectangle / Square" },
@@ -45,12 +47,12 @@ const SHAPE_LABELS = {
 
 export default function IrregularCalc() {
   const [sections, setSections] = useState([{ id: 0, label: "A", shape: "rectangle", a: "", b: "", c: "" }]);
-  const [deductions, setDeductions] = useState([{ id: 0, label: "Existing concrete", area: "" }]);
+  const [deductions, setDeductions] = useState([]);
   const [waste, setWaste] = useState(10);
   const [precision] = useState("hundredth");
 
   const grossArea = sections.reduce((sum, s) => sum + computeShape(s.shape, s), 0);
-  const totalDeductions = deductions.reduce((sum, d) => sum + (parseFloat(d.area) || 0), 0);
+  const totalDeductions = totalDeductionArea(deductions);
   const netArea = Math.max(0, grossArea - totalDeductions);
   const wasteResult = applyWaste(netArea, waste);
 
@@ -65,11 +67,17 @@ export default function IrregularCalc() {
   };
   const removeSection = (id) => setSections((prev) => prev.filter((s) => s.id !== id));
 
-  const updateDeduction = (id, field, value) => {
-    setDeductions((prev) => prev.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
-  };
-  const addDeduction = () => setDeductions((prev) => [...prev, { id: Date.now(), label: "New deduction", area: "" }]);
-  const removeDeduction = (id) => setDeductions((prev) => prev.filter((d) => d.id !== id));
+  const vizSections = sections.map((s) => {
+    const base = { id: String(s.id), label: s.label };
+    switch (s.shape) {
+      case "rectangle": return { ...base, type: "rectangle", params: { length: parseFloat(s.a) || 0, width: parseFloat(s.b) || 0 } };
+      case "triangle": return { ...base, type: "triangle", params: { base: parseFloat(s.a) || 0, height: parseFloat(s.b) || 0 } };
+      case "trapezoid": return { ...base, type: "trapezoid", params: { a: parseFloat(s.a) || 0, b: parseFloat(s.b) || 0, height: parseFloat(s.c) || 0 } };
+      case "circle": return { ...base, type: "circle", params: { radius: parseFloat(s.a) || 0 } };
+      case "semicircle": return { ...base, type: "half", params: { radius: parseFloat(s.a) || 0 } };
+      default: return { ...base, type: "rectangle", params: { length: 0, width: 0 } };
+    }
+  });
 
   return (
     <CalcShell title="Irregular Area" subtitle="Divide into shapes, subtract obstacles" icon={Crop}>
@@ -119,18 +127,12 @@ export default function IrregularCalc() {
           );
         })}
 
-        {/* Deductions */}
-        <div className="flex items-center justify-between pt-2">
-          <h2 className="font-bold text-slate-800">Deductions / Obstacles</h2>
-          <Button size="sm" variant="outline" onClick={addDeduction}><Plus size={16} className="mr-1" /> Add</Button>
-        </div>
-        {deductions.map((d) => (
-          <div key={d.id} className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-3">
-            <Input value={d.label} onChange={(e) => updateDeduction(d.id, "label", e.target.value)} className="h-11 flex-1" />
-            <Input type="number" placeholder="sq ft" value={d.area} onChange={(e) => updateDeduction(d.id, "area", e.target.value)} className="h-11 w-28 text-base" />
-            <button onClick={() => removeDeduction(d.id)} className="p-2 text-red-500"><Trash2 size={18} /></button>
-          </div>
-        ))}
+        <ObstacleToolkit
+          grossArea={grossArea}
+          sections={vizSections}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <div>
           <Label className="text-base font-semibold">Waste %</Label>

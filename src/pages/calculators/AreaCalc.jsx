@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
 
 // Generic area calculator with multiple sub-sections + a measurement checklist.
 // props: title, subtitle, icon, checklist (array of strings)
@@ -16,6 +17,7 @@ export default function AreaCalc({ title, subtitle, icon: Icon, checklist = [] }
   const [checked, setChecked] = useState({});
   const [waste, setWaste] = useState(10);
   const [precision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   const totalArea = subs.reduce((sum, s) => sum + (s.length * s.width), 0);
   const wasteResult = applyWaste(totalArea, waste);
@@ -86,6 +88,13 @@ export default function AreaCalc({ title, subtitle, icon: Icon, checklist = [] }
           <ResultCard title="Final Material (with waste)" value={formatValue(wasteResult.total, precision)} unit="sq ft"
             formula={`${formatValue(totalArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
         </div>
+
+        <ObstacleToolkit
+          grossArea={totalArea}
+          sections={subs.map((s) => ({ id: String(s.id), type: "rectangle", label: s.label, params: { length: s.length, width: s.width } }))}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

@@ -5,6 +5,7 @@ import MeasurementInput from "@/components/MeasurementInput";
 import { ResultCard, FormulaBreakdown, WarningList } from "@/components/ResultCard";
 import { calcTriangle, calcTriangleSides, validateMeasurements, formatValue } from "@/lib/measurementUtils";
 import { Label } from "@/components/ui/label";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
 
 export default function TriangleCalc() {
   const [mode, setMode] = useState("baseHeight"); // baseHeight | threeSides
@@ -14,6 +15,7 @@ export default function TriangleCalc() {
   const [b, setB] = useState(0);
   const [c, setC] = useState(0);
   const [precision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   let result, formula;
   if (mode === "baseHeight") {
@@ -73,6 +75,17 @@ export default function TriangleCalc() {
             formula={`${a} + ${b} + ${c} = ${formatValue(result.perimeter, precision)}`}
           />
         )}
+
+        <ObstacleToolkit
+          grossArea={result.area}
+          sections={
+            mode === "baseHeight"
+              ? [{ id: "tri", type: "triangle", label: "Triangle", params: { base, height } }]
+              : [{ id: "tri", type: "rectangle", label: "Triangle", params: { length: Math.sqrt(result.area || 0), width: Math.sqrt(result.area || 0) } }]
+          }
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={

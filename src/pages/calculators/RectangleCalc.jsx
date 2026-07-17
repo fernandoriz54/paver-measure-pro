@@ -6,12 +6,14 @@ import { ResultCard, FormulaBreakdown, WarningList } from "@/components/ResultCa
 import { calcRectangle, applyWaste, validateMeasurements, formatValue } from "@/lib/measurementUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
 
 export default function RectangleCalc() {
   const [length, setLength] = useState(0);
   const [width, setWidth] = useState(0);
   const [waste, setWaste] = useState(5);
   const [precision, setPrecision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   const result = calcRectangle(length, width);
   const wasteResult = applyWaste(result.area, waste);
@@ -77,6 +79,13 @@ export default function RectangleCalc() {
             formula={`${formatValue(result.area, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`}
           />
         </div>
+
+        <ObstacleToolkit
+          grossArea={result.area}
+          sections={[{ id: "rect", type: "rectangle", label: "Rectangle", params: { length, width } }]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

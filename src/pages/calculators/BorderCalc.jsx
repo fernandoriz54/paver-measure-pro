@@ -7,6 +7,7 @@ import { calcBorder, applyWaste, BORDER_WIDTH_OPTIONS, BORDER_STYLES, validateMe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
 
 export default function BorderCalc() {
   const [linearFeet, setLinearFeet] = useState(203.89);
@@ -16,6 +17,7 @@ export default function BorderCalc() {
   const [pieceLength, setPieceLength] = useState(0);
   const [waste, setWaste] = useState(10);
   const [precision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   const result = calcBorder(linearFeet, borderWidthIn, rows);
   const wasteResult = applyWaste(result.borderArea, waste);
@@ -93,6 +95,13 @@ export default function BorderCalc() {
               formula={`${formatValue(wasteResult.total, precision)} ÷ (${formatValue(pieceLength / 12, precision)} × ${formatValue(widthFt, precision)}) → round up`} />
           )}
         </div>
+
+        <ObstacleToolkit
+          grossArea={result.borderArea}
+          sections={[{ id: "border", type: "path", label: "Border", params: { linear: linearFeet, width: widthFt } }]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

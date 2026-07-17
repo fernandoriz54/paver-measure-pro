@@ -7,6 +7,8 @@ import { calcMaterial, applyWaste, validateMeasurements, formatValue } from "@/l
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { squareSection } from "@/lib/deductionUtils";
 
 export default function MaterialCalc() {
   const [area, setArea] = useState(0);
@@ -14,6 +16,7 @@ export default function MaterialCalc() {
   const [products, setProducts] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [product, setProduct] = useState(null);
+  const [deductions, setDeductions] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -115,6 +118,12 @@ export default function MaterialCalc() {
             Select a product to calculate quantities.
           </div>
         )}
+        <ObstacleToolkit
+          grossArea={area}
+          sections={[squareSection(area, "Material")]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
       </div>
     </CalcShell>
   );

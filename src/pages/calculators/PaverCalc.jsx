@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { squareSection } from "@/lib/deductionUtils";
 
 export default function PaverCalc() {
   const [totalArea, setTotalArea] = useState(0);
@@ -20,6 +22,7 @@ export default function PaverCalc() {
   const [pieceLength, setPieceLength] = useState(8);
   const [pieceWidth, setPieceWidth] = useState(4);
   const [precision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   const netField = Math.max(0, totalArea - deductedArea - borderArea - accentArea);
   const fieldWaste = applyWaste(netField, waste);
@@ -128,6 +131,13 @@ export default function PaverCalc() {
             </>
           )}
         </div>
+
+        <ObstacleToolkit
+          grossArea={totalArea}
+          sections={[squareSection(totalArea, "Project")]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

@@ -14,6 +14,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
 
 export default function CircleCalc() {
   const [mode, setMode] = useState("diameter"); // diameter | radius | circumference
@@ -22,6 +23,7 @@ export default function CircleCalc() {
   const [circumference, setCircumference] = useState(0);
   const [percent, setPercent] = useState(100);
   const [precision, setPrecision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   let result;
   if (mode === "diameter") result = calcCircleFromDiameter(parseFloat(diameter) || 0);
@@ -133,6 +135,13 @@ export default function CircleCalc() {
             }
           />
         </div>
+
+        <ObstacleToolkit
+          grossArea={partialArea}
+          sections={[{ id: "circle", type: "circle", label: "Circle", params: { radius: result.radius } }]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

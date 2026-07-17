@@ -7,6 +7,8 @@ import { calcSteps, applyWaste, validateMeasurements, formatValue } from "@/lib/
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { squareSection } from "@/lib/deductionUtils";
 
 export default function StepsCalc() {
   const [numSteps, setNumSteps] = useState(3);
@@ -18,6 +20,7 @@ export default function StepsCalc() {
   const [bullnosePieceLen, setBullnosePieceLen] = useState(0);
   const [waste, setWaste] = useState(10);
   const [precision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   const result = calcSteps({ numSteps, totalHeight: totalHeight / 12, stepWidth, treadDepth: treadDepth / 12, landingDepth: landingDepth / 12, numLandings });
   const bullnoseLinear = stepWidth * numSteps;
@@ -101,6 +104,13 @@ export default function StepsCalc() {
           <ResultCard title="Final Material (with waste)" value={formatValue(stepWaste.total, precision)} unit="sq ft"
             formula={`${formatValue(result.totalStepArea, precision)} + ${formatValue(stepWaste.wasteAmount, precision)} = ${formatValue(stepWaste.total, precision)}`} />
         </div>
+
+        <ObstacleToolkit
+          grossArea={result.totalStepArea}
+          sections={[squareSection(result.totalStepArea, "Steps")]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

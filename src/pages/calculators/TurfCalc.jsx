@@ -7,6 +7,8 @@ import { applyWaste, validateMeasurements, formatValue } from "@/lib/measurement
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { squareSection } from "@/lib/deductionUtils";
 
 export default function TurfCalc() {
   const [grossArea, setGrossArea] = useState(0);
@@ -20,6 +22,7 @@ export default function TurfCalc() {
   const [rollWidth, setRollWidth] = useState(15);
   const [perimeter, setPerimeter] = useState(0);
   const [precision] = useState("hundredth");
+  const [deductions, setDeductions] = useState([]);
 
   const totalDeductions = concreteArea + walkwayArea + treeWellArea + planterArea + paverBorderArea + otherDeductions;
   const netTurf = Math.max(0, grossArea - totalDeductions);
@@ -89,6 +92,13 @@ export default function TurfCalc() {
           <ResultCard title="Est. Roll Lengths Needed" value={formatValue(rollLengths, precision)} unit={`lin ft @ ${rollWidth} ft wide`} />
           <ResultCard title="Approx. Number of Seams" value={numSeams} unit="seams" />
         </div>
+
+        <ObstacleToolkit
+          grossArea={grossArea}
+          sections={[squareSection(grossArea, "Lawn")]}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         <FormulaBreakdown
           steps={[

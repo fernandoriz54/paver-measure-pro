@@ -15,7 +15,8 @@ import {
   formatValue,
   WASTE_OPTIONS,
 } from "@/lib/measurementUtils";
-import LayoutPlan from "@/components/LayoutPlan";
+import ObstacleToolkit from "@/components/ObstacleToolkit";
+import { totalDeductionArea } from "@/lib/deductionUtils";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
@@ -61,8 +62,7 @@ export default function EstimateBuilder() {
   const { toast } = useToast();
   const [sections, setSections] = useState([newSection("A"), newSection("B"), newSection("C")]);
   const [waste, setWaste] = useState(10);
-  const [deduction, setDeduction] = useState(0);
-  const [customDeduction, setCustomDeduction] = useState("");
+  const [deductions, setDeductions] = useState([]);
   const [clientName, setClientName] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -78,9 +78,20 @@ export default function EstimateBuilder() {
   const totalPerim = sections.reduce((sum, s) => sum + (computedMap[s.id]?.perimeter || 0), 0);
   const wasteArea = totalArea * (waste / 100);
   const totalWithWaste = totalArea + wasteArea;
-  const deductionPercent = deduction === "custom" ? (parseFloat(customDeduction) || 0) : deduction;
-  const deductionAmount = totalWithWaste * (deductionPercent / 100);
+  const deductionAmount = totalDeductionArea(deductions);
   const finalTotal = totalWithWaste - deductionAmount;
+
+  const vizSections = sections.map((s) => {
+    const m = s.measurements;
+    const base = { id: String(s.id), label: s.label };
+    switch (s.shape) {
+      case "rectangle": return { ...base, type: "rectangle", params: { length: parseFloat(m.lengthFt) || 0, width: parseFloat(m.widthFt) || 0 } };
+      case "circle": return { ...base, type: "circle", params: { radius: (parseFloat(m.diameter) || 0) / 2 } };
+      case "triangle": return { ...base, type: "triangle", params: { base: parseFloat(m.baseFt) || 0, height: parseFloat(m.heightFt) || 0 } };
+      case "trapezoid": return { ...base, type: "trapezoid", params: { a: parseFloat(m.sideA) || 0, b: parseFloat(m.sideB) || 0, height: parseFloat(m.heightFt) || 0 } };
+      default: return { ...base, type: "rectangle", params: { length: 0, width: 0 } };
+    }
+  });
 
   const relabel = (list) => list.map((s, i) => ({ ...s, label: LETTERS[i] || `S${i + 1}` }));
 
@@ -228,8 +239,13 @@ export default function EstimateBuilder() {
           <Plus size={18} className="mr-2" /> Add Section {LETTERS[sections.length] || ""}
         </Button>
 
-        {/* Layout plan */}
-        <LayoutPlan sections={sections} computedMap={computedMap} />
+        {/* Obstacles + drag-and-drop visualizer */}
+        <ObstacleToolkit
+          grossArea={totalArea}
+          sections={vizSections}
+          deductions={deductions}
+          setDeductions={setDeductions}
+        />
 
         {/* Totals */}
         <div className="bg-emerald-800 text-white rounded-2xl p-5 shadow-lg space-y-4">
@@ -268,44 +284,11 @@ export default function EstimateBuilder() {
               ))}
             </div>
           </div>
-          <div>
-            <Label className="text-emerald-100 text-sm">Remove % (deduction)</Label>
-            <div className="flex gap-2 mt-1 flex-wrap items-center">
-              {[0, 5, 10, 15, 20].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => { setDeduction(deduction === d ? 0 : d); setCustomDeduction(""); }}
-                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${
-                    deduction === d ? "bg-rose-400 text-white" : "bg-emerald-700 text-white"
-                  }`}
-                >
-                  {d === 0 ? "None" : `${d}%`}
-                </button>
-              ))}
-              <button
-                onClick={() => setDeduction("custom")}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold ${
-                  deduction === "custom" ? "bg-rose-400 text-white" : "bg-emerald-700 text-white"
-                }`}
-              >
-                Custom
-              </button>
-              {deduction === "custom" && (
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  value={customDeduction}
-                  onChange={(e) => setCustomDeduction(e.target.value)}
-                  className="h-9 w-24 bg-white text-emerald-900"
-                  placeholder="%"
-                />
-              )}
-            </div>
-          </div>
-          {deductionPercent > 0 && (
+          {/* Obstacle deductions are managed in the ObstacleToolkit above */}
+          {deductionAmount > 0 && (
             <div className="bg-rose-500/90 text-white rounded-xl p-3 flex items-center justify-between">
               <div>
-                <div className="text-xs font-semibold">Less {deductionPercent}% deduction</div>
+                <div className="text-xs font-semibold">Less obstacles</div>
                 <div className="text-xs text-rose-100">− {formatValue(deductionAmount, "hundredth")} sf</div>
               </div>
               <div className="text-lg font-extrabold">{formatValue(totalWithWaste, "hundredth")} sf</div>
@@ -316,7 +299,7 @@ export default function EstimateBuilder() {
               <div className="text-xs font-semibold">Final total</div>
               <div className="text-xs text-emerald-800">
                 {formatValue(totalArea, "hundredth")} sf + {formatValue(wasteArea, "hundredth")} waste
-                {deductionPercent > 0 && ` − ${formatValue(deductionAmount, "hundredth")} ded`}
+                {deductionAmount > 0 && ` − ${formatValue(deductionAmount, "hundredth")} ded`}
               </div>
             </div>
             <div className="text-2xl font-extrabold">{formatValue(finalTotal, "hundredth")} sf</div>
