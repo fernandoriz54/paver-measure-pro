@@ -36,6 +36,7 @@ const CALC_BUTTONS = [
   { label: "Irregular Area", path: "/calc/irregular", icon: Crop, color: "bg-rose-700" },
   { label: "Material Quantity", path: "/calc/material", icon: Package, color: "bg-violet-700" },
   { label: "Unit Converter", path: "/calc/converter", icon: Ruler, color: "bg-fuchsia-700" },
+  { label: "Combined + Deduct", path: "/calc/combined", icon: Plus, color: "bg-emerald-900" },
 ];
 
 export default function Dashboard() {
