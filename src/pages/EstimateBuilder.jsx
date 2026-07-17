@@ -247,10 +247,18 @@ export default function EstimateBuilder() {
           <div>
             <Label className="text-emerald-100 text-sm">Waste % (adds)</Label>
             <div className="flex gap-2 mt-1 flex-wrap">
+              <button
+                onClick={() => setWaste(0)}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                  waste === 0 ? "bg-slate-200 text-slate-700" : "bg-emerald-700 text-white"
+                }`}
+              >
+                None
+              </button>
               {WASTE_OPTIONS.map((w) => (
                 <button
                   key={w.value}
-                  onClick={() => setWaste(w.value)}
+                  onClick={() => setWaste(waste === w.value ? 0 : w.value)}
                   className={`px-3 py-2 rounded-lg text-sm font-semibold ${
                     waste === w.value ? "bg-amber-400 text-emerald-900" : "bg-emerald-700 text-white"
                   }`}
@@ -266,7 +274,7 @@ export default function EstimateBuilder() {
               {[0, 5, 10, 15, 20].map((d) => (
                 <button
                   key={d}
-                  onClick={() => { setDeduction(d); setCustomDeduction(""); }}
+                  onClick={() => { setDeduction(deduction === d ? 0 : d); setCustomDeduction(""); }}
                   className={`px-3 py-2 rounded-lg text-sm font-semibold ${
                     deduction === d ? "bg-rose-400 text-white" : "bg-emerald-700 text-white"
                   }`}
