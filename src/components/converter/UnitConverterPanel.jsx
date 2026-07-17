@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CONVERSIONS, parseMeasurement, parseNumber } from "@/lib/unitConverter";
 import { useConverter } from "@/lib/ConverterContext";
 
-export default function UnitConverterPanel({ onUse }) {
-  const { insert } = useConverter();
+export default function UnitConverterPanel({ onUse, insertValue }) {
+  const ctx = useConverter();
+  const insert = ctx ? ctx.insert : null;
   const [catId, setCatId] = useState("ftin_to_decimal");
   const [input, setInput] = useState("");
   const [width, setWidth] = useState("");
@@ -30,7 +31,8 @@ export default function UnitConverterPanel({ onUse }) {
   const handleUse = () => {
     if (!result) return;
     const val = result.insert ?? result.value;
-    insert(val);
+    if (insertValue) insertValue(val);
+    else if (insert) insert(val);
     if (onUse) onUse();
   };
 

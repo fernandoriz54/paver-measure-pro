@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { feetInchesToDecimal } from "@/lib/measurementUtils";
+import QuickUnitConverter from "@/components/converter/QuickUnitConverter";
 
 // Feet + Inches input with auto-conversion to decimal feet.
 // props: label, onChange(decimalValue), value (decimal), allowDecimal (default true)
@@ -28,9 +29,20 @@ export default function MeasurementInput({ label, onChange, value, hint }) {
     onChange(parseFloat(d) || 0);
   };
 
+  // Insert a converted decimal-feet value from the inline converter.
+  const handleInsert = (v) => {
+    const dec = parseFloat(v) || 0;
+    setMode("dec");
+    setDecimal(String(dec));
+    onChange(dec);
+  };
+
   return (
     <div className="space-y-1.5">
-      {label && <Label className="text-base font-semibold">{label}</Label>}
+      <div className="flex items-center justify-between gap-2">
+        {label ? <Label className="text-base font-semibold">{label}</Label> : <span />}
+        <QuickUnitConverter onInsert={handleInsert} />
+      </div>
       <div className="flex gap-1.5 mb-1.5">
         <button
           type="button"
