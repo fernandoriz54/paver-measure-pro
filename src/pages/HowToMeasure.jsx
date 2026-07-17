@@ -76,6 +76,74 @@ function CurvedPathDiagram() {
   );
 }
 
+function TrapezoidDiagram() {
+  return (
+    <svg viewBox="0 0 260 170" className="w-full max-w-sm mx-auto">
+      <polygon points="40,140 220,140 190,40 70,40" fill="#6366f115" stroke="#4338ca" strokeWidth="2" />
+      <line x1="40" y1="150" x2="220" y2="150" stroke="#475569" strokeWidth="1" />
+      <text x="130" y="162" textAnchor="middle" fontSize="10" fill="#334155">B = 18' (bottom)</text>
+      <line x1="70" y1="30" x2="190" y2="30" stroke="#475569" strokeWidth="1" />
+      <text x="130" y="24" textAnchor="middle" fontSize="10" fill="#334155">b = 12' (top)</text>
+      <line x1="30" y1="40" x2="30" y2="140" stroke="#dc2626" strokeWidth="1.5" />
+      <text x="24" y="94" textAnchor="end" fontSize="10" fill="#dc2626">h = 8' (height)</text>
+      <text x="130" y="95" textAnchor="middle" fontSize="9" fill="#475569">Area = ½ × (B + b) × h</text>
+    </svg>
+  );
+}
+
+function AngledCornerDiagram() {
+  return (
+    <svg viewBox="0 0 240 180" className="w-full max-w-sm mx-auto">
+      <polygon points="30,150 210,150 210,40 140,40 90,80 30,80" fill="#10b98115" stroke="#0f766e" strokeWidth="2" />
+      {/* angled cut triangle */}
+      <polygon points="140,40 90,80 140,80" fill="#dc262630" stroke="#dc2626" strokeWidth="1.5" strokeDasharray="4 3" />
+      <text x="112" y="62" textAnchor="middle" fontSize="9" fill="#dc2626">T</text>
+      <line x1="140" y1="40" x2="140" y2="80" stroke="#475569" strokeWidth="1" />
+      <text x="150" y="64" fontSize="9" fill="#334155">a = 4'</text>
+      <line x1="90" y1="80" x2="90" y2="40" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" />
+      <text x="80" y="62" textAnchor="end" fontSize="9" fill="#334155">b = 6'</text>
+      <text x="120" y="115" textAnchor="middle" fontSize="9" fill="#475569">Cut triangle T = ½ × a × b, subtract it</text>
+    </svg>
+  );
+}
+
+function ObstacleDiagram() {
+  return (
+    <svg viewBox="0 0 260 180" className="w-full max-w-sm mx-auto">
+      <rect x="20" y="20" width="220" height="140" fill="#10b98115" stroke="#0f766e" strokeWidth="2" rx="4" />
+      <circle cx="140" cy="90" r="28" fill="#f59e0b40" stroke="#b45309" strokeWidth="2" />
+      <text x="140" y="94" textAnchor="middle" fontSize="9" fill="#7c2d12" fontWeight="700">Tree</text>
+      <rect x="200" y="120" width="30" height="30" fill="#dc262630" stroke="#dc2626" strokeWidth="2" />
+      <text x="215" y="138" textAnchor="middle" fontSize="8" fill="#7f1d1d">Post</text>
+      <line x1="112" y1="90" x2="168" y2="90" stroke="#b45309" strokeWidth="1" />
+      <text x="140" y="128" textAnchor="middle" fontSize="8" fill="#b45309">⌀ 4.5'</text>
+      <text x="130" y="170" textAnchor="middle" fontSize="9" fill="#475569">Net = Gross − tree − post (and any planter)</text>
+    </svg>
+  );
+}
+
+function CurveOffsetDiagram() {
+  return (
+    <svg viewBox="0 0 260 160" className="w-full max-w-sm mx-auto">
+      <path d="M 20 130 Q 100 10 240 40" fill="none" stroke="#4338ca" strokeWidth="2" />
+      <path d="M 40 140 Q 110 30 245 55" fill="none" stroke="#4338ca" strokeWidth="2" />
+      {[40, 90, 140, 190].map((x, i) => (
+        <line
+          key={i}
+          x1={x}
+          y1={130 - i * 3}
+          x2={x + 5}
+          y2={140 - i * 3 - 2}
+          stroke="#94a3b8"
+          strokeWidth="1"
+          strokeDasharray="3 3"
+        />
+      ))}
+      <text x="130" y="150" textAnchor="middle" fontSize="9" fill="#475569">Offset lines (perpendicular to curve)</text>
+    </svg>
+  );
+}
+
 function SquareCheckDiagram() {
   return (
     <svg viewBox="0 0 220 180" className="w-full max-w-xs mx-auto">
@@ -126,15 +194,74 @@ const HOW_TO = [
   {
     icon: Spline,
     title: "Curved & Freeform Paths",
-    intro: "For winding paths, measure in short straight segments and add the lengths, then use an average width.",
+    intro: "Curves can't be measured with one tape pull. Use the offset/staking method for an accurate total length, then average the width.",
     diagram: <CurvedPathDiagram />,
     steps: [
-      "Place stakes or marks every few feet along the center of the curve.",
-      "Measure each straight segment between stakes (S1, S2, S3…) and add them for total length.",
-      "Measure the width at each stake and average them.",
+      "Lay a baseline (a string line) along the general direction of the curve.",
+      "Place stakes or mark points every 2–3 ft along the center of the curve.",
+      "At each stake, measure the perpendicular offset from the baseline to the curve — this traces the true shape.",
+      "Measure each straight segment between stakes (S1, S2, S3…) and add them for total center-line length.",
+      "Measure the width at each stake and average them — curves taper too, so 3+ widths matter.",
       "Area = total length × average width.",
-      "For tight curves, add 10–15% extra for cuts and waste.",
-      "Alternative: lay a rope along the curve, then measure the rope for a quick total length.",
+      "For tight curves, add 10–15% extra for cuts and waste (pavers must be scribed to the curve).",
+      "Quick method: lay a garden hose or rope along the curve, mark the ends, then measure the rope straight for a fast total length.",
+    ],
+  },
+  {
+    icon: Spline,
+    title: "Curved Edges & Radius Corners",
+    intro: "When a patio or lawn has a rounded edge or radius corner, treat the curve as a partial circle to find its area.",
+    diagram: <CurveOffsetDiagram />,
+    steps: [
+      "Find the center point of the curve — the deepest part of the arc is the radius.",
+      "Measure from the start of the curve to the end across the opening (the chord).",
+      "Measure how deep the curve bulges at its middle (the sagitta / rise).",
+      "Estimate radius: R ≈ (chord² ÷ 8 × rise) + (rise ÷ 2).",
+      "Treat the rounded corner as a quarter- or half-circle sector: Area = ½ × π × R² (half) or ¼ × π × R² (quarter).",
+      "If the curve is small (under 3 ft), just measure a bounding square and subtract a small triangle — close enough for waste to cover.",
+      "When in doubt, over-measure slightly and rely on the waste percentage to absorb cut loss.",
+    ],
+  },
+  {
+    icon: CheckSquare,
+    title: "Trapezoid / Tapered Areas",
+    intro: "Driveways and paths often widen or narrow. When the two long sides aren't equal, it's a trapezoid — not a rectangle.",
+    diagram: <TrapezoidDiagram />,
+    steps: [
+      "Measure the top width (b) and the bottom width (B) — the two parallel sides.",
+      "Measure the perpendicular height (h) straight across between them, not along the slanted side.",
+      "Formula: Area = ½ × (B + b) × h.",
+      "Example: B = 18', b = 12', h = 8' → ½ × 30 × 8 = 120 sq ft.",
+      "Common mistake: Using only the average of the two ends as 'width' works — but only if both ends are parallel. If not, split into a trapezoid + triangle.",
+      "Double-check: If B and b are equal, the trapezoid formula becomes a plain rectangle.",
+    ],
+  },
+  {
+    icon: CheckSquare,
+    title: "Angled Corners & 45° Cuts",
+    intro: "Patios and decks often have a corner clipped at an angle. Split the cut into a triangle and subtract it.",
+    diagram: <AngledCornerDiagram />,
+    steps: [
+      "Measure the full bounding rectangle around the area first.",
+      "Find the clipped corner and measure the two legs of the cut (a and b).",
+      "Cut triangle area = ½ × a × b.",
+      "Net area = bounding rectangle − cut triangle.",
+      "If there are multiple clipped corners, subtract each triangle separately.",
+      "Tip: A 45° clip means a = b. A 2' × 2' clip removes exactly 2 sq ft.",
+    ],
+  },
+  {
+    icon: CheckSquare,
+    title: "Obstacles & Deductions",
+    intro: "Tree wells, posts, planters, and existing concrete sit inside your area and must be subtracted.",
+    diagram: <ObstacleDiagram />,
+    steps: [
+      "Measure the full bounding area (Gross) as if nothing were in the way.",
+      "For a round obstacle (tree well), measure the diameter and use Area = ¼ × π × diameter².",
+      "For a square/rectangular obstacle (planter, post pad), measure length × width.",
+      "List every deduction, then: Net = Gross − sum of all deductions.",
+      "Common mistake: Forgetting small items — a 1'×1' post pad is still 1 sq ft each.",
+      "Double-check: Walk the area and physically point at every obstacle before you finalize the deduction list.",
     ],
   },
   {
