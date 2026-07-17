@@ -17,10 +17,20 @@ const SHAPE_TYPES = [
   { value: "path", label: "Path / Walk", needs: ["linear", "width"] },
 ];
 
-const DEDUCT_TYPES = [
-  { value: "circle", label: "Tree / Circle", needs: ["diameter"] },
-  { value: "rect", label: "Planter / Rectangle", needs: ["length", "width"] },
+// Obstacle presets: named things you keep & work around.
+// kind drives the area formula; needs drives which params are shown.
+const DEDUCT_PRESETS = [
+  { name: "Tree", kind: "circle", needs: ["diameter"] },
+  { name: "Light Post", kind: "circle", needs: ["diameter"] },
+  { name: "Planter", kind: "rect", needs: ["length", "width"] },
+  { name: "Electrical Unit", kind: "rect", needs: ["length", "width"] },
+  { name: "AC Unit", kind: "rect", needs: ["length", "width"] },
+  { name: "Fence", kind: "rect", needs: ["length", "width"] },
+  { name: "Half Circle", kind: "half", needs: ["radius"] },
+  { name: "Quarter Circle", kind: "quarter", needs: ["radius"] },
+  { name: "Path / Walk", kind: "path", needs: ["linear", "width"] },
 ];
+const presetByName = (nm) => DEDUCT_PRESETS.find((p) => p.name === nm);
 
 let _id = 0;
 const uid = () => `${Date.now()}-${_id++}`;
@@ -53,13 +63,23 @@ function shapeFormula(type, p, gross) {
     default: return "";
   }
 }
-function deductArea(type, p) {
-  if (type === "circle") return PI * ((p.diameter || 0) / 2) ** 2;
-  return (p.length || 0) * (p.width || 0);
+function deductArea(kind, p) {
+  switch (kind) {
+    case "circle": return PI * ((p.diameter || 0) / 2) ** 2;
+    case "half": return 0.5 * PI * (p.radius || 0) ** 2;
+    case "quarter": return 0.25 * PI * (p.radius || 0) ** 2;
+    case "path": return (p.linear || 0) * (p.width || 0);
+    default: return (p.length || 0) * (p.width || 0); // rect
+  }
 }
-function deductFormula(type, p, area) {
-  if (type === "circle") return `${PI} × (${fmt(p.diameter)}÷2)² = ${fmt(area)}`;
-  return `${fmt(p.length)} × ${fmt(p.width)} = ${fmt(area)}`;
+function deductFormula(kind, p, area) {
+  switch (kind) {
+    case "circle": return `${PI} × (${fmt(p.diameter)}÷2)² = ${fmt(area)}`;
+    case "half": return `½ × ${PI} × ${fmt(p.radius)}² = ${fmt(area)}`;
+    case "quarter": return `¼ × ${PI} × ${fmt(p.radius)}² = ${fmt(area)}`;
+    case "path": return `${fmt(p.linear)} × ${fmt(p.width)} = ${fmt(area)}`;
+    default: return `${fmt(p.length)} × ${fmt(p.width)} = ${fmt(area)}`; // rect
+  }
 }
 const fmt = (n) => formatValue(n || 0, "hundredth");
 
@@ -81,7 +101,7 @@ export default function CombinedCalc() {
   const removeSection = (id) => setSections((s) => s.filter((sec) => sec.id !== id));
 
   const addDeduct = (secId) =>
-    setSections((s) => s.map((sec) => (sec.id === secId ? { ...sec, deductions: [...sec.deductions, { id: uid(), type: "circle", params: { diameter: 0 } }] } : sec)));
+    setSections((s) => s.map((sec) => (sec.id === secId ? { ...sec, deductions: [...sec.deductions, { id: uid(), name: "Tree", kind: "circle", params: { diameter: 0 } }] } : sec)));
   const updateDeduct = (secId, did, patch) =>
     setSections((s) => s.map((sec) => (sec.id === secId ? { ...sec, deductions: sec.deductions.map((d) => (d.id === did ? { ...d, ...patch } : d)) } : sec)));
   const updateDeductParam = (secId, did, key, val) =>
@@ -91,7 +111,7 @@ export default function CombinedCalc() {
 
   const computed = sections.map((sec) => {
     const gross = shapeGross(sec.type, sec.params);
-    const deductions = sec.deductions.map((d) => ({ ...d, area: deductArea(d.type, d.params) }));
+    const deductions = sec.deductions.map((d) => ({ ...d, area: deductArea(d.kind, d.params) }));
     const totalDeduct = deductions.reduce((sum, d) => sum + d.area, 0);
     return { ...sec, gross, deductions, totalDeduct, net: Math.max(0, gross - totalDeduct) };
   });
@@ -190,21 +210,22 @@ export default function CombinedCalc() {
                   </button>
                 </div>
                 {sec.deductions.map((d) => {
-                  const dt = DEDUCT_TYPES.find((t) => t.value === d.type);
+                  const preset = presetByName(d.name) || DEDUCT_PRESETS[0];
                   return (
                     <div key={d.id} className="bg-rose-50/60 border border-rose-200 rounded-lg p-2 space-y-2">
                       <div className="flex items-center gap-2">
                         <select
-                          value={d.type}
+                          value={d.name}
                           onChange={(e) => {
+                            const np = presetByName(e.target.value);
                             const fresh = {};
-                            DEDUCT_TYPES.find((t) => t.value === e.target.value).needs.forEach((k) => (fresh[k] = 0));
-                            updateDeduct(sec.id, d.id, { type: e.target.value, params: fresh });
+                            np.needs.forEach((k) => (fresh[k] = 0));
+                            updateDeduct(sec.id, d.id, { name: e.target.value, kind: np.kind, params: fresh });
                           }}
                           className="text-xs font-semibold h-9 rounded-md border border-input bg-transparent px-2"
                         >
-                          {DEDUCT_TYPES.map((t) => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
+                          {DEDUCT_PRESETS.map((p) => (
+                            <option key={p.name} value={p.name}>{p.name}</option>
                           ))}
                         </select>
                         <button onClick={() => removeDeduct(sec.id, d.id)} className="ml-auto p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg">
@@ -212,7 +233,7 @@ export default function CombinedCalc() {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {dt.needs.map((k) => (
+                        {preset.needs.map((k) => (
                           <div key={k}>
                             <Label className="text-xs">{labelFor(k)}</Label>
                             <Input
@@ -225,7 +246,7 @@ export default function CombinedCalc() {
                           </div>
                         ))}
                       </div>
-                      <div className="text-xs text-rose-600 font-mono">−{deductFormula(d.type, d.params, d.area)} sq ft</div>
+                      <div className="text-xs text-rose-600 font-mono">−{deductFormula(d.kind, d.params, d.area)} sq ft</div>
                     </div>
                   );
                 })}
