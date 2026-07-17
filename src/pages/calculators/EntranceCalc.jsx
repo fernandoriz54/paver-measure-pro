@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { DoorOpen, Plus, RotateCcw } from "lucide-react";
+import { DoorOpen, Plus, RotateCcw, ChevronDown } from "lucide-react";
 import CalcShell from "@/components/CalcShell";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -46,14 +46,17 @@ const exampleProject = () => ({
 
 const blankProject = () => ({ ...exampleProject(), clientName: "", projectAddress: "", walkway: { length: 0, width: 0 }, porch: { length: 0, width: 0 }, landing: { length: 0, width: 0 }, steps: [newStep(0)], stepsEqual: false, bullnoseExtra: 0, notes: "" });
 
-const Card = ({ title, children, action }) => (
-  <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
-    <div className="flex items-center justify-between">
-      <h2 className="text-sm font-bold uppercase tracking-wide text-emerald-700">{title}</h2>
-      {action}
-    </div>
-    {children}
-  </div>
+const Card = ({ title, children, action, open = true }) => (
+  <details open={open} className="bg-white rounded-xl border border-slate-200 shadow-sm group">
+    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+      <div className="flex items-center gap-2">
+        <ChevronDown size={16} className="text-emerald-700 transition-transform group-open:rotate-180" />
+        <h2 className="text-sm font-bold uppercase tracking-wide text-emerald-700">{title}</h2>
+      </div>
+      {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
+    </summary>
+    <div className="px-4 pb-4 space-y-3">{children}</div>
+  </details>
 );
 
 const Field = ({ label, value, onChange, type = "number", placeholder }) => (
@@ -146,7 +149,7 @@ export default function EntranceCalc() {
           </div>
         </Card>
 
-        <Card title="Bullnose Edging & Returns">
+        <Card title="Bullnose Edging & Returns" open={false}>
           <p className="text-xs text-slate-500">Step front edges + returns are summed per step in the report. Add landing, porch, curved & additional edges below.</p>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Landing front (ft)" value={p.bullnoseLanding.front} onChange={(v) => setGroup("bullnoseLanding", "front", v)} />
@@ -167,7 +170,7 @@ export default function EntranceCalc() {
           </div>
         </Card>
 
-        <Card title="Border">
+        <Card title="Border" open={false}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Border width (in)" value={p.border.widthIn} onChange={(v) => setGroup("border", "widthIn", v)} />
             <div>
@@ -187,7 +190,7 @@ export default function EntranceCalc() {
           </div>
         </Card>
 
-        <Card title="Rise & Run">
+        <Card title="Rise & Run" open={false}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Total vertical height (in)" value={p.riseRun.totalHeightIn} onChange={(v) => setGroup("riseRun", "totalHeightIn", v)} />
             <Field label="Number of risers" value={p.riseRun.numRisers} onChange={(v) => setGroup("riseRun", "numRisers", v)} />
@@ -202,7 +205,7 @@ export default function EntranceCalc() {
           </div>
         </Card>
 
-        <Card title="Deductions & Existing Concrete">
+        <Card title="Deductions & Existing Concrete" open={false}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Existing concrete length (ft)" value={p.existingConcrete.length} onChange={(v) => setGroup("existingConcrete", "length", v)} />
             <Field label="Existing concrete width (ft)" value={p.existingConcrete.width} onChange={(v) => setGroup("existingConcrete", "width", v)} />
@@ -229,12 +232,12 @@ export default function EntranceCalc() {
           </div>
         </Card>
 
-        <Card title="Photos">
+        <Card title="Photos" open={false}>
           <input type="file" multiple accept="image/*" onChange={(e) => set("photos", Array.from(e.target.files).map((f) => f.name))} className="text-xs" />
           <p className="text-xs text-slate-500">{(p.photos || []).length} photo(s) attached.</p>
         </Card>
 
-        <Card title="Notes">
+        <Card title="Notes" open={false}>
           <Textarea value={p.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Notes and installation concerns" className="text-sm" />
         </Card>
 
