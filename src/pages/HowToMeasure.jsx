@@ -76,6 +76,28 @@ function CurvedPathDiagram() {
   );
 }
 
+function PathAreaDiagram() {
+  return (
+    <svg viewBox="0 0 280 150" className="w-full max-w-sm mx-auto">
+      {/* path body */}
+      <rect x="30" y="50" width="220" height="50" fill="#6366f115" stroke="#4338ca" strokeWidth="2" rx="4" />
+      {/* length line (wheel) */}
+      <line x1="30" y1="120" x2="250" y2="120" stroke="#b45309" strokeWidth="1.5" />
+      <text x="140" y="116" textAnchor="middle" fontSize="10" fill="#b45309" fontWeight="600">Length = 36' (wheel)</text>
+      {/* width measurements */}
+      {[60, 140, 220].map((x, i) => (
+        <g key={i}>
+          <line x1={x} y1="50" x2={x} y2="100" stroke="#dc2626" strokeWidth="1.5" strokeDasharray="3 2" />
+          <text x={x} y="44" textAnchor="middle" fontSize="10" fill="#dc2626" fontWeight="600">
+            W{i + 1}
+          </text>
+        </g>
+      ))}
+      <text x="140" y="138" textAnchor="middle" fontSize="9" fill="#475569">Width with tape (W1+W2+W3) ÷ 3 → Area = length × width</text>
+    </svg>
+  );
+}
+
 function TrapezoidDiagram() {
   return (
     <svg viewBox="0 0 260 170" className="w-full max-w-sm mx-auto">
@@ -190,6 +212,21 @@ const HOW_TO = [
       "Area A = length × width. Area B = same.",
       "Total area = Area A + Area B. (The Estimate Builder does this for you with sections.)",
       "Tip: Any notch or bump can be split the same way — keep going until every piece is a rectangle or triangle.",
+    ],
+  },
+  {
+    icon: Route,
+    title: "Area of a Path",
+    intro: "A path's area = its length × its average width. Use your wheel for length, your tape for width.",
+    diagram: <PathAreaDiagram />,
+    steps: [
+      "Roll the measuring wheel down the center of the path, start to end — write down the length.",
+      "Measure the width in 3 spots with your 25 ft tape: near the start, the middle, near the end.",
+      "Add the 3 widths and ÷ 3 = average width.",
+      "Area = length × average width. Example: 36 ft long × 4 ft wide = 144 sq ft.",
+      "If one part is much wider (an entrance), measure it as its own section and add it.",
+      "For a curved path, roll the wheel along the curve for length, then measure widths every 2–3 ft and average them.",
+      "Mistake to avoid: measuring width only once — paths that taper give the wrong area.",
     ],
   },
   {
