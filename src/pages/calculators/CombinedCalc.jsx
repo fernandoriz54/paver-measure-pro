@@ -14,6 +14,7 @@ const SHAPE_TYPES = [
   { value: "circle", label: "Full Circle", needs: ["radius"] },
   { value: "triangle", label: "Triangle", needs: ["base", "height"] },
   { value: "trapezoid", label: "Trapezoid", needs: ["a", "b", "height"] },
+  { value: "path", label: "Path / Walk", needs: ["linear", "width"] },
 ];
 
 const DEDUCT_TYPES = [
@@ -32,8 +33,13 @@ function shapeGross(type, p) {
     case "circle": return PI * (p.radius || 0) ** 2;
     case "triangle": return 0.5 * (p.base || 0) * (p.height || 0);
     case "trapezoid": return ((p.a || 0) + (p.b || 0)) / 2 * (p.height || 0);
+    case "path": return (p.linear || 0) * (p.width || 0);
     default: return 0;
   }
+}
+function shapeLinear(type, p) {
+  if (type === "path") return p.linear || 0;
+  return 0;
 }
 function shapeFormula(type, p, gross) {
   switch (type) {
@@ -43,6 +49,7 @@ function shapeFormula(type, p, gross) {
     case "circle": return `${PI} × ${fmt(p.radius)}² = ${fmt(gross)}`;
     case "triangle": return `½ × ${fmt(p.base)} × ${fmt(p.height)} = ${fmt(gross)}`;
     case "trapezoid": return `(${fmt(p.a)} + ${fmt(p.b)}) ÷ 2 × ${fmt(p.height)} = ${fmt(gross)}`;
+    case "path": return `${fmt(p.linear)} lin ft × ${fmt(p.width)} ft wide = ${fmt(gross)} sq ft`;
     default: return "";
   }
 }
@@ -91,6 +98,7 @@ export default function CombinedCalc() {
   const grandGross = computed.reduce((s, sec) => s + sec.gross, 0);
   const grandDeduct = computed.reduce((s, sec) => s + sec.totalDeduct, 0);
   const grandNet = computed.reduce((s, sec) => s + sec.net, 0);
+  const grandLinear = computed.reduce((s, sec) => s + shapeLinear(sec.type, sec.params), 0);
 
   return (
     <CalcShell title="Combined Section + Deduct" subtitle="Build up shapes, deduct obstacles per section" icon={Plus}>
@@ -158,6 +166,17 @@ export default function CombinedCalc() {
                   <div className="font-bold text-emerald-700">{fmt(sec.net)}<span className="text-xs"> sq ft</span></div>
                 </div>
               </div>
+              {sec.type === "path" && (
+                <>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="px-2 py-1 rounded-md bg-cyan-100 text-cyan-800 font-bold">{fmt(shapeLinear(sec.type, sec.params))} lin ft</span>
+                    <span className="text-xs text-slate-500">Use for borders, edging & bullnose</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 text-xs text-amber-700">
+                    Curved path? Roll the measuring wheel along the centerline to get the linear length — same formula works for straight or curved paths.
+                  </div>
+                </>
+              )}
               <div className="text-xs text-slate-500 font-mono bg-slate-50 rounded-md px-2 py-1.5">
                 {shapeFormula(sec.type, sec.params, sec.gross)}
               </div>
@@ -239,6 +258,12 @@ export default function CombinedCalc() {
               <div className="text-xl font-extrabold text-amber-300">{fmt(grandNet)}</div>
             </div>
           </div>
+          {grandLinear > 0 && (
+            <div className="text-center pt-1 border-t border-emerald-700 mt-1">
+              <span className="text-[10px] uppercase text-cyan-300">Path Linear Total: </span>
+              <span className="font-extrabold text-cyan-300">{fmt(grandLinear)} lin ft</span>
+            </div>
+          )}
         </div>
 
         <FormulaBreakdown
@@ -264,6 +289,8 @@ function labelFor(key) {
     a: "Side A (top)",
     b: "Side B (bottom)",
     diameter: "Diameter",
+    linear: "Linear Length (along path)",
+    width: "Width",
   };
   return map[key] || key;
 }
