@@ -9,7 +9,7 @@ export default function CalcShell({ title, subtitle, icon: Icon, children }) {
     <div className="min-h-screen bg-slate-50 pb-16">
       <div className="sticky top-0 z-20 bg-emerald-800 text-white px-4 py-3 flex items-center gap-3 shadow-md">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/projects"))}
           className="p-2 -ml-2 rounded-lg hover:bg-emerald-700 transition"
           aria-label="Back"
         >

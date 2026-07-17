@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Minus } from "lucide-react";
 import CalcShell from "@/components/CalcShell";
 import MeasurementInput from "@/components/MeasurementInput";
@@ -7,6 +7,8 @@ import { PI, formatValue } from "@/lib/measurementUtils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import VisualPlan from "@/components/VisualPlan";
+import ExportBar from "@/components/ExportBar";
+import SaveToProject from "@/components/SaveToProject";
 
 const SHAPE_TYPES = [
   { value: "rectangle", label: "Rectangle", needs: ["length", "width"] },
@@ -145,6 +147,7 @@ export default function CombinedCalc() {
   const grandDeduct = computed.reduce((s, sec) => s + sec.totalDeduct, 0);
   const grandNet = computed.reduce((s, sec) => s + sec.net, 0);
   const grandLinear = computed.reduce((s, sec) => s + shapeLinear(sec.type, sec.params), 0);
+  const exportRef = useRef(null);
 
   return (
     <CalcShell title="Combined Section + Deduct" subtitle="Build up shapes, deduct obstacles per section" icon={Plus}>
@@ -288,41 +291,47 @@ export default function CombinedCalc() {
           <Plus size={20} /> Add Section
         </button>
 
-        {computed.length > 0 && <VisualPlan sections={computed} />}
+        <div ref={exportRef} className="space-y-5">
+          {computed.length > 0 && <VisualPlan sections={computed} />}
 
-        {/* Project totals */}
-        <div className="bg-emerald-800 text-white rounded-2xl p-4 space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wide text-emerald-100">Project Totals</div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-[10px] uppercase text-emerald-200">Gross</div>
-              <div className="text-xl font-extrabold">{fmt(grandGross)}</div>
+          {/* Project totals */}
+          <div className="bg-emerald-800 text-white rounded-2xl p-4 space-y-2">
+            <div className="text-xs font-bold uppercase tracking-wide text-emerald-100">Project Totals</div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-[10px] uppercase text-emerald-200">Gross</div>
+                <div className="text-xl font-extrabold">{fmt(grandGross)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase text-emerald-200">Deduct</div>
+                <div className="text-xl font-extrabold">{fmt(grandDeduct)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase text-amber-300">Net Total</div>
+                <div className="text-xl font-extrabold text-amber-300">{fmt(grandNet)}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-[10px] uppercase text-emerald-200">Deduct</div>
-              <div className="text-xl font-extrabold">{fmt(grandDeduct)}</div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase text-amber-300">Net Total</div>
-              <div className="text-xl font-extrabold text-amber-300">{fmt(grandNet)}</div>
-            </div>
+            {grandLinear > 0 && (
+              <div className="text-center pt-1 border-t border-emerald-700 mt-1">
+                <span className="text-[10px] uppercase text-cyan-300">Path Linear Total: </span>
+                <span className="font-extrabold text-cyan-300">{fmt(grandLinear)} lin ft</span>
+              </div>
+            )}
           </div>
-          {grandLinear > 0 && (
-            <div className="text-center pt-1 border-t border-emerald-700 mt-1">
-              <span className="text-[10px] uppercase text-cyan-300">Path Linear Total: </span>
-              <span className="font-extrabold text-cyan-300">{fmt(grandLinear)} lin ft</span>
-            </div>
-          )}
+
+          <FormulaBreakdown
+            steps={[
+              `Sections: ${computed.length}`,
+              `Total gross area = ${fmt(grandGross)} sq ft`,
+              `Total deductions = ${fmt(grandDeduct)} sq ft`,
+              `Net project area = ${fmt(grandGross)} − ${fmt(grandDeduct)} = ${fmt(grandNet)} sq ft`,
+            ]}
+          />
         </div>
 
-        <FormulaBreakdown
-          steps={[
-            `Sections: ${computed.length}`,
-            `Total gross area = ${fmt(grandGross)} sq ft`,
-            `Total deductions = ${fmt(grandDeduct)} sq ft`,
-            `Net project area = ${fmt(grandGross)} − ${fmt(grandDeduct)} = ${fmt(grandNet)} sq ft`,
-          ]}
-        />
+        {/* Save & export */}
+        <SaveToProject sections={computed} />
+        <ExportBar targetRef={exportRef} sections={computed} fileBase="combined-sections" />
       </div>
     </CalcShell>
   );
