@@ -1,0 +1,54 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "manufacturer": {
+      "type": "string"
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "product_type": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string"
+    },
+    "texture": {
+      "type": "string"
+    },
+    "length_in": {
+      "type": "number"
+    },
+    "width_in": {
+      "type": "number"
+    },
+    "thickness_in": {
+      "type": "number"
+    },
+    "sqft_per_pallet": {
+      "type": "number"
+    },
+    "pieces_per_pallet": {
+      "type": "number"
+    },
+    "linear_feet_per_piece": {
+      "type": "number"
+    },
+    "coverage_info": {
+      "type": "string"
+    },
+    "installation_pattern": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "photo": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "product_name"
+  ]
+}

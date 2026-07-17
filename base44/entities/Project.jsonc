@@ -1,0 +1,50 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "client_name": {
+      "type": "string"
+    },
+    "project_address": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "appointment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "project_type": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "product_color": {
+      "type": "string"
+    },
+    "product_size": {
+      "type": "string"
+    },
+    "installation_pattern": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_name"
+  ]
+}
