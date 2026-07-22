@@ -5,6 +5,8 @@ import GuidedDiagram from "./GuidedDiagram";
 import HelpCard from "./HelpCard";
 import ReviewPanel from "./ReviewPanel";
 import SegmentEditor from "./SegmentEditor";
+import SectionAreaEditor from "./SectionAreaEditor";
+import WidthsEditor from "./WidthsEditor";
 import VisualExampleSelector from "./VisualExampleSelector";
 import MeasurementInput from "@/components/MeasurementInput";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,7 @@ export default function GuidedMeasurement({ config, onExit }) {
   const [values, setValues] = useState({});
   const [showHelp, setShowHelp] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [estimateReady, setEstimateReady] = useState(false);
   const [acknowledged, setAcknowledged] = useState({});
   const [checklist, setChecklist] = useState({});
 
@@ -39,6 +42,7 @@ export default function GuidedMeasurement({ config, onExit }) {
           setPhase(saved.phase || "measure");
           setStepIndex(saved.stepIndex || 0);
           setVerified(!!saved.verified);
+          setEstimateReady(!!saved.estimateReady);
           setAcknowledged(saved.acknowledged || {});
         }
       }
@@ -49,10 +53,10 @@ export default function GuidedMeasurement({ config, onExit }) {
   useEffect(() => {
     if (phase === "type") return;
     const t = setTimeout(() => {
-      try { sessionStorage.setItem(storeKey, JSON.stringify({ typeId, values, phase, stepIndex, verified, acknowledged })); } catch {}
+      try { sessionStorage.setItem(storeKey, JSON.stringify({ typeId, values, phase, stepIndex, verified, estimateReady, acknowledged })); } catch {}
     }, 400);
     return () => clearTimeout(t);
-  }, [storeKey, typeId, values, phase, stepIndex, verified, acknowledged]);
+  }, [storeKey, typeId, values, phase, stepIndex, verified, estimateReady, acknowledged]);
 
   const typeChoice = useMemo(() => config.typeChoices.find((t) => t.id === typeId) || null, [config, typeId]);
   const steps = useMemo(() => (typeId ? config.getSteps(typeId, values) : []), [config, typeId, values]);
@@ -70,6 +74,7 @@ export default function GuidedMeasurement({ config, onExit }) {
     setStepIndex(0);
     setPhase("measure");
     setVerified(false);
+    setEstimateReady(false);
     setAcknowledged({});
     setChecklist({});
   };
@@ -147,6 +152,12 @@ export default function GuidedMeasurement({ config, onExit }) {
     if (step.inputType === "segments") {
       return <SegmentEditor label={step.question} value={values[step.field]} onChange={(v) => setField(step.field, v)} count={Math.round(values.numSegments || 0)} />;
     }
+    if (step.inputType === "sectionsArea") {
+      return <SectionAreaEditor label={step.question} value={values[step.field]} onChange={(v) => setField(step.field, v)} min={step.minSections || 2} />;
+    }
+    if (step.inputType === "widths") {
+      return <WidthsEditor label={step.question} value={values[step.field]} onChange={(v) => setField(step.field, v)} min={2} />;
+    }
     if (step.inputType === "select") {
       return (
         <div>
@@ -201,8 +212,10 @@ export default function GuidedMeasurement({ config, onExit }) {
             onAcknowledge={(id) => setAcknowledged((p) => ({ ...p, [id]: !p[id] }))}
             onFix={(field) => onTapDimension(field)}
             onEdit={() => { setPhase("measure"); setStepIndex(0); }}
-            onDuplicate={() => { setValues({}); setStepIndex(0); setPhase("measure"); setVerified(false); setAcknowledged({}); setChecklist({}); }}
-            onAddAnother={() => { setTypeId(null); setValues({}); setPhase("type"); setVerified(false); setAcknowledged({}); setChecklist({}); }}
+            onDuplicate={() => { setValues({}); setStepIndex(0); setPhase("measure"); setVerified(false); setEstimateReady(false); setAcknowledged({}); setChecklist({}); }}
+            onAddAnother={() => { setTypeId(null); setValues({}); setPhase("type"); setVerified(false); setEstimateReady(false); setAcknowledged({}); setChecklist({}); }}
+            estimateReady={estimateReady}
+            onToggleEstimateReady={() => setEstimateReady((e) => !e)}
           />
         ) : (
           <div className="space-y-4">
@@ -274,6 +287,52 @@ function buildChecklist(configId, typeId) {
       "Did you take a supporting photo of the staircase?",
     ];
   }
+  if (configId === "patios") {
+    return [
+      "Did you measure the overall length and width (longest sides)?",
+      Array.isArray(typeId) || (typeId && ["L", "U", "multi", "freeform"].includes(typeId)) ? "Did you label each section A, B, C and confirm none overlap?" : "Did you run a diagonal check to confirm the patio is square?",
+      "Did you subtract every obstacle and existing concrete as area?",
+      typeId === "cutout" ? "Did you measure the cutout length and width separately?" : "Did you confirm the perimeter for any border?",
+      "Did you take a supporting photo of the patio area?",
+    ];
+  }
+  if (configId === "walkways") {
+    return [
+      "Did you measure the centerline length (not an edge)?",
+      typeId === "tapered" ? "Did you measure width at both the start and the end?" : typeId === "changingWidths" ? "Did you measure width at each station?" : "Did you confirm the path width?",
+      "Did you keep field length authoritative regardless of bends?",
+      typeId === "steppingSlab" ? "Did you count the slabs and measure the gap?" : "Did you note any border or connected area?",
+      "Did you take a supporting photo of the walkway?",
+    ];
+  }
+  if (configId === "turf") {
+    return [
+      "Did you measure the gross turf length and width?",
+      "Did you subtract every planter, concrete, drain and AC pad as area?",
+      typeId === "treeWells" ? "Did you count the tree wells and measure each diameter?" : "Did you note any stepping slabs or paver border?",
+      "Did you record metal edging separately as linear feet?",
+      "Did you take a supporting photo of the lawn?",
+    ];
+  }
+  if (configId === "driveways") {
+    return [
+      typeId === "tapered" || typeId === "flare" ? "Did you measure both the garage width and the street width?" : "Did you measure the garage width and main depth?",
+      typeId === "apron" ? "Did you measure the apron length and width separately from the main slab?" : "Did you confirm the depth is garage-to-street, perpendicular?",
+      "Did you mark any drainage feature as verified?",
+      "Did you note any border or connected walkway area?",
+      "Did you take a supporting photo of the driveway?",
+    ];
+  }
+  if (configId === "borders") {
+    return [
+      "Did you measure the total run with a measuring wheel along the edge?",
+      "Did you exclude shared and no-border edges from the effective run?",
+      "Did you enter the border width and number of rows?",
+      ["circular", "interiorRing", "treeWell"].includes(typeId) ? "Did you measure both the inner and outer diameters?" : "Did you count corners for corner pieces?",
+      "Did you take a supporting photo of the bordered edge?",
+    ];
+  }
+  // walls (default)
   return [
     "Did you measure each segment's length end to end?",
     "Did you measure visible height only (exclude the buried course)?",

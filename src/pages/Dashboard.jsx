@@ -25,13 +25,13 @@ import {
 // Large visual categories. "guided" = has the new Guided Measurement flow;
 // otherwise routes to the existing calculator (functionality preserved).
 const CATEGORIES = [
-  { label: "Patio or Rectangle", blurb: "Square or rectangular patios & slabs.", icon: Square, color: "bg-sky-700", path: "/calc/rectangle", guided: false },
-  { label: "Walkway or Curved Path", blurb: "Straight, tapered or curved walkways.", icon: Footprints, color: "bg-cyan-700", path: "/calc/walkway", guided: false },
-  { label: "Driveway", blurb: "Main slab, flares, apron & garage.", icon: Car, color: "bg-slate-700", path: "/calc/driveway", guided: false },
-  { label: "Turf or Lawn", blurb: "Turf area with deductions & seams.", icon: Sprout, color: "bg-green-700", path: "/calc/turf", guided: false },
+  { label: "Patio or Rectangle", blurb: "Square, L, U & freeform patios.", icon: Square, color: "bg-sky-700", path: "/guided/patios", guided: true },
+  { label: "Walkway or Curved Path", blurb: "Straight, tapered, curved & slabs.", icon: Footprints, color: "bg-cyan-700", path: "/guided/walkways", guided: true },
+  { label: "Driveway", blurb: "Main slab, flares, apron & garage.", icon: Car, color: "bg-slate-700", path: "/guided/driveways", guided: true },
+  { label: "Turf or Lawn", blurb: "Turf area with deductions & seams.", icon: Sprout, color: "bg-green-700", path: "/guided/turf", guided: true },
   { label: "Steps and Stairs", blurb: "Rise, run, bullnose & surface area.", icon: Shovel, color: "bg-amber-700", path: "/guided/steps", guided: true },
   { label: "Walls and Planters", blurb: "Face area, caps, ends & corners.", icon: Box, color: "bg-orange-700", path: "/guided/walls", guided: true },
-  { label: "Borders and Edging", blurb: "Linear run, rows & inside edges.", icon: Grid3x3, color: "bg-rose-700", path: "/calc/border", guided: false },
+  { label: "Borders and Edging", blurb: "Linear run, rows, rings & units.", icon: Grid3x3, color: "bg-rose-700", path: "/guided/borders", guided: true },
   { label: "Circle or Fire Pit", blurb: "Diameter, ring & seating wall.", icon: CircleIcon, color: "bg-indigo-700", path: "/calc/circle", guided: false },
   { label: "Irregular Area", blurb: "Divide into simple shapes.", icon: Crop, color: "bg-teal-700", path: "/calc/irregular", guided: false },
   { label: "Obstacles and Deductions", blurb: "AC, trees, columns, drains & pads.", icon: Ban, color: "bg-fuchsia-700", path: "/calc/combined", guided: false },

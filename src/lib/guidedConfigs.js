@@ -1,5 +1,6 @@
 import { Shovel, Box } from "lucide-react";
 import { calcSteps, applyWaste, validateMeasurements, WASTE_OPTIONS, formatValue } from "@/lib/measurementUtils";
+import { PHASE2_CONFIGS } from "@/lib/guidedConfigsPhase2";
 
 const P = "hundredth";
 const fmt = (v) => formatValue(v, P);
@@ -336,6 +337,7 @@ const wallsConfig = {
 export const GUIDED_CONFIGS = {
   steps: stepsConfig,
   walls: wallsConfig,
+  ...PHASE2_CONFIGS,
 };
 
 export function getGuidedConfig(id) {

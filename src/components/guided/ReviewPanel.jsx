@@ -1,18 +1,31 @@
 import React from "react";
-import { Edit, Copy, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Edit, Copy, Plus, Maximize2, BadgeCheck } from "lucide-react";
 import SaveToProject from "@/components/SaveToProject";
 import ConfidenceBadge from "./ConfidenceBadge";
 import VerificationChecklist from "./VerificationChecklist";
 import WarningPanel from "./WarningPanel";
+
+// Map a guided config id to the existing visualizer route for "Open in Visualizer".
+const VISUALIZER_ROUTE = {
+  walkways: "/calc/walkway",
+  patios: "/calc/rectangle",
+  turf: "/calc/turf",
+  driveways: "/calc/driveway",
+  borders: "/calc/border",
+};
 
 // Project review before saving.
 export default function ReviewPanel({
   config, typeId, values, results, verified, confidence, issues, acknowledged,
   checklistQuestions, checklist, onToggleCheck,
   onToggleVerified, onAcknowledge, onFix, onEdit, onDuplicate, onAddAnother,
+  estimateReady, onToggleEstimateReady,
 }) {
+  const navigate = useNavigate();
   const allChecked = checklistQuestions?.length > 0 && checklistQuestions.every((_, i) => checklist[i]);
   const canVerify = allChecked && (issues?.length || 0) === 0;
+  const visualizerRoute = VISUALIZER_ROUTE[config?.id];
 
   return (
     <div className="space-y-4">
@@ -85,7 +98,7 @@ export default function ReviewPanel({
       }]} />
 
       {/* Quick actions */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <button onClick={onEdit} className="flex flex-col items-center gap-1 bg-white border border-slate-200 rounded-xl py-3 text-slate-700 active:scale-95">
           <Edit size={18} /><span className="text-xs font-semibold">Edit</span>
         </button>
@@ -95,7 +108,24 @@ export default function ReviewPanel({
         <button onClick={onAddAnother} className="flex flex-col items-center gap-1 bg-white border border-slate-200 rounded-xl py-3 text-slate-700 active:scale-95">
           <Plus size={18} /><span className="text-xs font-semibold">Add Another</span>
         </button>
+        {visualizerRoute && (
+          <button onClick={() => navigate(visualizerRoute)} className="flex flex-col items-center gap-1 bg-white border border-slate-200 rounded-xl py-3 text-slate-700 active:scale-95">
+            <Maximize2 size={18} /><span className="text-xs font-semibold">Visualizer</span>
+          </button>
+        )}
       </div>
+
+      {/* Mark Estimate Ready */}
+      {onToggleEstimateReady && (
+        <button
+          onClick={onToggleEstimateReady}
+          className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold border-2 transition ${
+            estimateReady ? "bg-violet-50 border-violet-500 text-violet-700" : "bg-white border-slate-300 text-slate-600 active:scale-95"
+          }`}
+        >
+          <BadgeCheck size={20} /> {estimateReady ? "Marked Estimate Ready" : "Mark Estimate Ready"}
+        </button>
+      )}
     </div>
   );
 }

@@ -1,6 +1,11 @@
 import React from "react";
 import StepsDiagram from "./StepsDiagram";
 import WallDiagram from "./WallDiagram";
+import PatioDiagram from "./PatioDiagram";
+import WalkwayDiagram from "./WalkwayDiagram";
+import TurfDiagram from "./TurfDiagram";
+import DrivewayDiagram from "./DrivewayDiagram";
+import BorderDiagram from "./BorderDiagram";
 
 // Format a decimal-feet length as ft/in for diagram labels.
 export function fmtLen(ft) {
@@ -71,6 +76,21 @@ export default function GuidedDiagram({ diagram, values, highlight, onTapDimensi
   }
   if (diagram.startsWith("wall")) {
     return <WallDiagram {...shared} diagram={diagram} />;
+  }
+  if (diagram.startsWith("patio")) {
+    return <PatioDiagram {...shared} diagram={diagram} />;
+  }
+  if (diagram.startsWith("walkway")) {
+    return <WalkwayDiagram {...shared} diagram={diagram} />;
+  }
+  if (diagram.startsWith("turf")) {
+    return <TurfDiagram {...shared} diagram={diagram} />;
+  }
+  if (diagram.startsWith("driveway")) {
+    return <DrivewayDiagram {...shared} diagram={diagram} />;
+  }
+  if (diagram.startsWith("border")) {
+    return <BorderDiagram {...shared} diagram={diagram} />;
   }
   return null;
 }
