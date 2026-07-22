@@ -19,6 +19,7 @@ import {
   GraduationCap,
   Package,
   Layers,
+  Map,
   Ruler,
   DoorOpen,
   Sparkles,
@@ -74,6 +75,16 @@ export default function Dashboard() {
             <span className="font-bold text-base">Saved Projects</span>
           </button>
         </div>
+
+        {/* Plan Viewer */}
+        <button onClick={() => navigate("/plan-viewer")} className="w-full flex items-center gap-3 bg-indigo-700 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition">
+          <Map size={24} />
+          <div className="text-left flex-1">
+            <div className="font-bold text-base">Plan Viewer</div>
+            <div className="text-xs text-indigo-100">See all project sections on one canvas before finalizing</div>
+          </div>
+          <ChevronRight size={20} />
+        </button>
 
         {/* Categories */}
         <div>

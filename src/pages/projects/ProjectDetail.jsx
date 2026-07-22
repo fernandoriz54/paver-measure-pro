@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { formatValue } from "@/lib/measurementUtils";
 import { deductArea, deductFormula, fmt } from "@/lib/deductionUtils";
 import { hydrate } from "@/lib/builderPersistence";
+import { sectionToViz, computeSection } from "@/lib/projectSections";
 import VisualPlan from "@/components/VisualPlan";
 
 const SECTION_TYPES = [
@@ -28,47 +29,6 @@ const TABS = [
   { id: "visualizer", label: "Visualizer", icon: Map },
   { id: "report", label: "Report", icon: FileText },
 ];
-
-// Map a saved Builder section to the shape params VisualPlan expects.
-function sectionToViz(s) {
-  const m = s.measurements || {};
-  const base = { id: String(s.id), label: s.label, name: s.name };
-  switch (s.shape) {
-    case "rectangle": return { ...base, type: "rectangle", params: { length: parseFloat(m.lengthFt) || 0, width: parseFloat(m.widthFt) || 0 } };
-    case "circle": return { ...base, type: "circle", params: { radius: (parseFloat(m.diameter) || 0) / 2 } };
-    case "triangle": return { ...base, type: "triangle", params: { base: parseFloat(m.baseFt) || 0, height: parseFloat(m.heightFt) || 0 } };
-    case "trapezoid": return { ...base, type: "trapezoid", params: { a: parseFloat(m.sideA) || 0, b: parseFloat(m.sideB) || 0, height: parseFloat(m.heightFt) || 0 } };
-    default: return { ...base, type: "rectangle", params: { length: 0, width: 0 } };
-  }
-}
-
-function computeSection(section) {
-  const m = section.measurements || {};
-  const num = (v) => parseFloat(v) || 0;
-  let area = 0, perimeter = 0, formula = "";
-  switch (section.shape) {
-    case "rectangle":
-      area = num(m.lengthFt) * num(m.widthFt);
-      perimeter = 2 * (num(m.lengthFt) + num(m.widthFt));
-      formula = `${num(m.lengthFt)} × ${num(m.widthFt)} = ${fmt(area)}`;
-      break;
-    case "circle":
-      area = Math.PI * Math.pow(num(m.diameter) / 2, 2);
-      perimeter = Math.PI * num(m.diameter);
-      formula = `π × (${num(m.diameter)}/2)² = ${fmt(area)}`;
-      break;
-    case "triangle":
-      area = 0.5 * num(m.baseFt) * num(m.heightFt);
-      formula = `½ × ${num(m.baseFt)} × ${num(m.heightFt)} = ${fmt(area)}`;
-      break;
-    case "trapezoid":
-      area = 0.5 * (num(m.sideA) + num(m.sideB)) * num(m.heightFt);
-      formula = `½ × (${num(m.sideA)} + ${num(m.sideB)}) × ${num(m.heightFt)} = ${fmt(area)}`;
-      break;
-    default: break;
-  }
-  return { area, perimeter, formula };
-}
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -183,9 +143,14 @@ export default function ProjectDetail() {
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
         {/* Open in Builder — primary action */}
-        <button onClick={openInBuilder} className="w-full flex items-center justify-center gap-2 bg-emerald-700 text-white rounded-2xl py-4 font-bold shadow-md active:scale-95 transition no-print">
-          <LayoutGrid size={20} /> Open in Estimate Builder
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 no-print">
+          <button onClick={openInBuilder} className="flex items-center justify-center gap-2 bg-emerald-700 text-white rounded-2xl py-4 font-bold shadow-md active:scale-95 transition">
+            <LayoutGrid size={20} /> Open in Builder
+          </button>
+          <button onClick={() => navigate(`/plan-viewer?projectId=${id}`)} className="flex items-center justify-center gap-2 bg-indigo-700 text-white rounded-2xl py-4 font-bold shadow-md active:scale-95 transition">
+            <Map size={20} /> Plan Viewer
+          </button>
+        </div>
 
         {!isFull && (
           <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-sm text-amber-800 flex gap-2">

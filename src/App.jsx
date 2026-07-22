@@ -34,6 +34,7 @@ import EntranceCalc from '@/pages/calculators/EntranceCalc';
 import GuidedCalc from '@/pages/GuidedCalc';
 import ProductLibrary from '@/pages/ProductLibrary';
 import EstimateBuilder from '@/pages/EstimateBuilder';
+import PlanViewer from '@/pages/PlanViewer';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
         <Route path="/guided/:configId" element={<GuidedCalc />} />
         <Route path="/products" element={<ProductLibrary />} />
         <Route path="/builder" element={<EstimateBuilder />} />
+        <Route path="/plan-viewer" element={<PlanViewer />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
