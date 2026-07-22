@@ -104,11 +104,11 @@ export default function CurveEditor({ obstacle, curve, onUpdateCurve, onSelect }
 
   const toggleLock = () => {
     if (c.measurementLock) { set({ measurementLock: false }); return; }
-    // locking back: confirm we will re-normalize and discard any measurement drift
-    if (window.confirm("Lock measurements? The centerline will be re-normalized to the measured length and any manual measurement drift discarded.")) {
-      const pts = buildPoints(c, L);
-      set({ measurementLock: true, points: normalizeSplineLength(pts, L) });
-    }
+    // Re-locking re-normalizes the visual handle points so the rendered
+    // centerline matches the measured length. Measurements live in `params`,
+    // not `points`, so no field data is lost — no confirmation needed.
+    const pts = L > 0 ? normalizeSplineLength(buildPoints(c, L), L) : buildPoints(c, L);
+    set({ measurementLock: true, points: pts });
   };
 
   const diff = geo.geometryArea - geo.fieldArea;
