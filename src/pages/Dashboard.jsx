@@ -4,41 +4,38 @@ import {
   Plus,
   Square,
   Circle as CircleIcon,
-  Triangle,
-  Layers,
   Sprout,
   Car,
   Footprints,
-  Trees,
+  Shovel,
+  Box,
+  Grid3x3,
   Crop,
-  Package,
+  Ban,
+  LayoutGrid,
   FolderOpen,
   BookOpen,
-  Ruler,
-  Sparkles,
-  Shovel,
-  DoorOpen,
-  Grid3x3,
-  LayoutGrid,
   GraduationCap,
+  Package,
+  Sparkles,
+  Eye,
+  ChevronRight,
 } from "lucide-react";
 
-const CALC_BUTTONS = [
-  { label: "Rectangle & Square", path: "/calc/rectangle", icon: Square, color: "bg-sky-700" },
-  { label: "Circle & Curved", path: "/calc/circle", icon: CircleIcon, color: "bg-indigo-700" },
-  { label: "Triangle", path: "/calc/triangle", icon: Triangle, color: "bg-teal-700" },
-  { label: "Paver Calculator", path: "/calc/paver", icon: Layers, color: "bg-emerald-700" },
-  { label: "Turf Calculator", path: "/calc/turf", icon: Sprout, color: "bg-green-700" },
-  { label: "Driveway", path: "/calc/driveway", icon: Car, color: "bg-slate-700" },
-  { label: "Walkway & Patio", path: "/calc/walkway", icon: Footprints, color: "bg-cyan-700" },
-  { label: "Lawn", path: "/calc/lawn", icon: Trees, color: "bg-lime-700" },
-  { label: "Steps & Stairs", path: "/calc/steps", icon: Shovel, color: "bg-amber-700" },
-  { label: "Border & Edging", path: "/calc/border", icon: Grid3x3, color: "bg-orange-700" },
-  { label: "Irregular Area", path: "/calc/irregular", icon: Crop, color: "bg-rose-700" },
-  { label: "Material Quantity", path: "/calc/material", icon: Package, color: "bg-violet-700" },
-  { label: "Unit Converter", path: "/calc/converter", icon: Ruler, color: "bg-fuchsia-700" },
-  { label: "Combined + Deduct", path: "/calc/combined", icon: Plus, color: "bg-emerald-900" },
-  { label: "Home Entrance", path: "/calc/entrance", icon: DoorOpen, color: "bg-emerald-800" },
+// Large visual categories. "guided" = has the new Guided Measurement flow;
+// otherwise routes to the existing calculator (functionality preserved).
+const CATEGORIES = [
+  { label: "Patio or Rectangle", blurb: "Square or rectangular patios & slabs.", icon: Square, color: "bg-sky-700", path: "/calc/rectangle", guided: false },
+  { label: "Walkway or Curved Path", blurb: "Straight, tapered or curved walkways.", icon: Footprints, color: "bg-cyan-700", path: "/calc/walkway", guided: false },
+  { label: "Driveway", blurb: "Main slab, flares, apron & garage.", icon: Car, color: "bg-slate-700", path: "/calc/driveway", guided: false },
+  { label: "Turf or Lawn", blurb: "Turf area with deductions & seams.", icon: Sprout, color: "bg-green-700", path: "/calc/turf", guided: false },
+  { label: "Steps and Stairs", blurb: "Rise, run, bullnose & surface area.", icon: Shovel, color: "bg-amber-700", path: "/guided/steps", guided: true },
+  { label: "Walls and Planters", blurb: "Face area, caps, ends & corners.", icon: Box, color: "bg-orange-700", path: "/guided/walls", guided: true },
+  { label: "Borders and Edging", blurb: "Linear run, rows & inside edges.", icon: Grid3x3, color: "bg-rose-700", path: "/calc/border", guided: false },
+  { label: "Circle or Fire Pit", blurb: "Diameter, ring & seating wall.", icon: CircleIcon, color: "bg-indigo-700", path: "/calc/circle", guided: false },
+  { label: "Irregular Area", blurb: "Divide into simple shapes.", icon: Crop, color: "bg-teal-700", path: "/calc/irregular", guided: false },
+  { label: "Obstacles and Deductions", blurb: "AC, trees, columns, drains & pads.", icon: Ban, color: "bg-fuchsia-700", path: "/calc/combined", guided: false },
+  { label: "Complete Project", blurb: "Sections A, B, C + layout plan.", icon: LayoutGrid, color: "bg-emerald-800", path: "/builder", guided: false },
 ];
 
 export default function Dashboard() {
@@ -51,7 +48,7 @@ export default function Dashboard() {
           <Sparkles size={26} className="text-amber-300" />
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">Paver Measure Pro</h1>
-            <p className="text-xs text-emerald-100">Field Measurement & Estimating Assistant</p>
+            <p className="text-xs text-emerald-100">Guided field measurement & estimating</p>
           </div>
         </div>
       </div>
@@ -59,90 +56,63 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
         {/* Primary actions */}
         <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => navigate("/projects/new")}
-            className="flex flex-col items-center justify-center gap-2 bg-amber-500 text-white rounded-2xl py-6 shadow-md active:scale-95 transition"
-          >
+          <button onClick={() => navigate("/projects/new")} className="flex flex-col items-center justify-center gap-2 bg-amber-500 text-white rounded-2xl py-6 shadow-md active:scale-95 transition">
             <Plus size={32} />
             <span className="font-bold text-base">New Project</span>
           </button>
-          <button
-            onClick={() => navigate("/projects")}
-            className="flex flex-col items-center justify-center gap-2 bg-emerald-700 text-white rounded-2xl py-6 shadow-md active:scale-95 transition"
-          >
+          <button onClick={() => navigate("/projects")} className="flex flex-col items-center justify-center gap-2 bg-emerald-700 text-white rounded-2xl py-6 shadow-md active:scale-95 transition">
             <FolderOpen size={32} />
             <span className="font-bold text-base">Saved Projects</span>
           </button>
         </div>
 
-        {/* Built-in estimate builder */}
-        <button
-          onClick={() => navigate("/builder")}
-          className="w-full flex items-center gap-3 bg-gradient-to-r from-emerald-700 to-emerald-900 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
-        >
-          <LayoutGrid size={26} />
-          <div className="text-left flex-1">
-            <div className="font-bold text-base">Estimate Builder</div>
-            <div className="text-xs text-emerald-100">Sections A, B, C… + layout plan, auto-calculated</div>
-          </div>
-          <Plus size={20} className="text-emerald-200" />
-        </button>
-
-        {/* Calculators */}
+        {/* Categories */}
         <div>
-          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500 mb-3 px-1">Calculators</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {CALC_BUTTONS.map((btn) => {
-              const Icon = btn.icon;
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500 mb-3 px-1">What are you measuring?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {CATEGORIES.map((c) => {
+              const Icon = c.icon;
               return (
-                <button
-                  key={btn.path}
-                  onClick={() => navigate(btn.path)}
-                  className="flex flex-col items-center justify-center gap-2 bg-white rounded-2xl py-5 shadow-sm border border-slate-200 active:scale-95 hover:shadow-md transition"
-                >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${btn.color}`}>
-                    <Icon size={24} className="text-white" />
+                <div key={c.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex gap-3">
+                  <div className={`w-14 h-14 shrink-0 rounded-xl flex items-center justify-center ${c.color}`}>
+                    <Icon size={26} className="text-white" />
                   </div>
-                  <span className="text-xs font-semibold text-slate-700 text-center px-1 leading-tight">{btn.label}</span>
-                </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800 text-sm leading-tight">{c.label}</span>
+                      {c.guided && <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded">GUIDED</span>}
+                    </div>
+                    <p className="text-xs text-slate-500 mb-2 leading-snug">{c.blurb}</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => navigate(c.path)} className="flex items-center gap-1 bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95">
+                        Start Measuring <ChevronRight size={14} />
+                      </button>
+                      <button onClick={() => navigate("/how-to")} className="flex items-center gap-1 border border-slate-300 text-slate-600 text-xs font-bold px-3 py-2 rounded-lg active:scale-95">
+                        <Eye size={14} /> View Example
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
         </div>
 
-        {/* Training & guides */}
-        <button
-          onClick={() => navigate("/how-to")}
-          className="w-full flex items-center gap-3 bg-amber-600 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
-        >
-          <GraduationCap size={24} />
-          <div className="text-left flex-1">
-            <div className="font-bold text-base">How To Measure</div>
-            <div className="text-xs text-amber-100">Visual training: irregular areas, paths, curves</div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => navigate("/guide")}
-          className="w-full flex items-center gap-3 bg-slate-800 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
-        >
-          <BookOpen size={24} />
-          <div className="text-left flex-1">
-            <div className="font-bold text-base">Measurement Guide</div>
-            <div className="text-xs text-slate-300">Formulas & reference diagrams</div>
-          </div>
-        </button>
-
-        <button
-          onClick={() => navigate("/products")}
-          className="w-full flex items-center gap-3 bg-violet-700 text-white rounded-2xl py-4 px-5 shadow-md active:scale-95 transition"
-        >
-          <Package size={24} />
-          <div className="text-left flex-1">
-            <div className="font-bold text-base">Product Library</div>
-            <div className="text-xs text-violet-100">Save products for material calculations</div>
-          </div>
-        </button>
+        {/* Reference & resources */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onClick={() => navigate("/how-to")} className="flex items-center gap-3 bg-amber-600 text-white rounded-2xl py-3.5 px-4 shadow-sm active:scale-95">
+            <GraduationCap size={22} />
+            <div className="text-left"><div className="font-bold text-sm">How To Measure</div><div className="text-xs text-amber-100">Visual training</div></div>
+          </button>
+          <button onClick={() => navigate("/guide")} className="flex items-center gap-3 bg-slate-800 text-white rounded-2xl py-3.5 px-4 shadow-sm active:scale-95">
+            <BookOpen size={22} />
+            <div className="text-left"><div className="font-bold text-sm">Formula Guide</div><div className="text-xs text-slate-300">Reference diagrams</div></div>
+          </button>
+          <button onClick={() => navigate("/products")} className="flex items-center gap-3 bg-violet-700 text-white rounded-2xl py-3.5 px-4 shadow-sm active:scale-95">
+            <Package size={22} />
+            <div className="text-left"><div className="font-bold text-sm">Product Library</div><div className="text-xs text-violet-100">Material data</div></div>
+          </button>
+        </div>
       </div>
     </div>
   );
