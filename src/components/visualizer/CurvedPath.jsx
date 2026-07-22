@@ -7,6 +7,7 @@ import {
   snapFeet,
   formatDim,
   normalizeSplineLength,
+  nearestCenterlinePoint,
 } from "@/lib/curvePath";
 
 // Renders a path-kind obstacle as a true curved band (centerline + offset
@@ -57,14 +58,24 @@ export default function CurvedPath({
     const p0 = geo.points[idx];
     const move = (ev) => {
       const local = screenToLocal(ev.clientX - startX, ev.clientY - startY);
-      let nx = p0.x + local.x;
-      let ny = p0.y + local.y;
+      // Fine Adjust reduces handle movement sensitivity to 25%.
+      const fx = c.fineAdjust ? 0.25 : 1;
+      let nx = p0.x + local.x * fx;
+      let ny = p0.y + local.y * fx;
       if (!c.moveEndpoints && isEnd) { nx = idx === 0 ? 0 : L; ny = 0; }
-      nx = Math.max(0, Math.min(L, nx));
-      ny = snapFeet(ny, c.snap);
+      // Interior handles move freely in any direction (including backward);
+      // endpoints stay clamped to the measured chord when moveable.
+      if (isEnd && c.moveEndpoints) {
+        nx = Math.max(0, Math.min(L, nx));
+        ny = 0;
+      }
+      if (!isEnd) {
+        nx = snapFeet(nx, c.snap);
+        ny = snapFeet(ny, c.snap);
+      }
       const newPoints = geo.points.map((p, i) => (i === idx ? { x: nx, y: ny } : p));
-      // Only re-normalize interior reshapes — never override an intentional
-      // endpoint move (which is itself a measurement edit, allowed only unlocked).
+      // Re-normalize interior reshapes so the rendered arc length stays equal
+      // to the locked measured length; measurements never change.
       let resolved = newPoints;
       if (c.measurementLock && !isEnd) {
         resolved = normalizeSplineLength(newPoints, L);
@@ -96,13 +107,19 @@ export default function CurvedPath({
     const cos = Math.cos(rad), sin = Math.sin(rad);
     const lx = cx + dx * cos - dy * sin;
     const ly = cy + dx * sin + dy * cos;
-    // insert between the two nearest points by x
+    // Insert the new handle at the nearest sampled centerline position (by
+    // arc distance, not by x-coordinate) so it lands on the actual path.
+    const segs = geo.segs;
+    const near = nearestCenterlinePoint(segs, { x: lx, y: ly });
+    const np = { x: snapFeet(near.point.x, c.snap), y: snapFeet(near.point.y, c.snap) };
     const pts = [...geo.points];
+    // place it after the last point whose arc-distance is before it
     let insertAt = pts.length - 1;
     for (let i = 0; i < pts.length - 1; i++) {
-      if (lx >= pts[i].x && lx <= pts[i + 1].x) { insertAt = i + 1; break; }
+      const midDist = (i + 0.5) / (pts.length - 1) * geo.renderedLen;
+      if (near.dist <= midDist) { insertAt = i + 1; break; }
     }
-    pts.splice(insertAt, 0, { x: Math.max(0, Math.min(L, lx)), y: snapFeet(ly, c.snap) });
+    pts.splice(insertAt, 0, np);
     const resolved = c.measurementLock ? normalizeSplineLength(pts, L) : pts;
     onUpdateCurve({ points: resolved });
   };

@@ -74,7 +74,11 @@ export default function CurveEditor({ obstacle, curve, onUpdateCurve, onSelect }
     set({ style, points: c.measurementLock ? normalizeSplineLength(pts, L) : pts });
   };
 
-  const resetShape = () => set({ points: [{ x: 0, y: 0 }, { x: L, y: 0 }], amount: 0, style: "single" });
+  // Reset Shape keeps three points: start anchor, center bend handle, end anchor.
+  const resetShape = () => {
+    const pts = [{ x: 0, y: 0 }, { x: L / 2, y: 0 }, { x: L, y: 0 }];
+    set({ points: pts, amount: 0, style: "single" });
+  };
 
   const smoothCurve = () => {
     // re-space interior handles evenly along x, average their y
