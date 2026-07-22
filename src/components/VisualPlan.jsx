@@ -64,8 +64,40 @@ function Block({ item, color, scale, pos, rotation, onDragEnd, onRotate, dragBou
   const pxW = Math.max(44, w * scale);
   const pxH = Math.max(44, h * scale);
   const rot = rotation || 0;
+  const rootRef = useRef(null);
+  const [rotDrag, setRotDrag] = useState(false);
+
+  const startFreeRotate = (e) => {
+    if (!onRotate) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setRotDrag(true);
+    const move = (ev) => {
+      const el = rootRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = ev.clientX - cx;
+      const dy = ev.clientY - cy;
+      // 0deg = pointing up; drag the handle to point the shape any direction.
+      let deg = (Math.atan2(dx, -dy) * 180) / Math.PI;
+      if (ev.shiftKey) deg = Math.round(deg / 15) * 15; // snap to 15° increments
+      deg = ((deg % 360) + 360) % 360;
+      onRotate(Math.round(deg));
+    };
+    const up = () => {
+      setRotDrag(false);
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  };
+
   return (
     <motion.div
+      ref={rootRef}
       drag
       dragMomentum={false}
       dragConstraints={dragBounds ? { left: 0, top: 0, right: Math.max(0, dragBounds.w - pxW), bottom: Math.max(0, dragBounds.h - pxH) } : undefined}
@@ -86,11 +118,37 @@ function Block({ item, color, scale, pos, rotation, onDragEnd, onRotate, dragBou
         </div>
       )}
       {onRotate && (
-        <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition flex flex-col gap-0.5">
-          <button onClick={(e) => { e.stopPropagation(); onRotate((rot + 15) % 360); }} className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow flex items-center justify-center text-slate-600 hover:text-indigo-600" title="Rotate 15°">
-            <RotateCw size={12} />
-          </button>
-        </div>
+        <>
+          {/* free-drag rotation handle */}
+          <div
+            className="absolute left-1/2 -top-7 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition"
+            style={{ opacity: rotDrag ? 1 : undefined }}
+          >
+            <div className="absolute left-1/2 top-5 -translate-x-1/2 w-px h-3 bg-slate-400" />
+            <button
+              onPointerDown={startFreeRotate}
+              className={`w-6 h-6 rounded-full bg-white border-2 shadow flex items-center justify-center touch-none ${rotDrag ? "border-indigo-600 text-indigo-600 scale-110" : "border-slate-300 text-slate-600 hover:text-indigo-600"}`}
+              title="Drag to rotate freely (hold Shift to snap to 15°)"
+            >
+              <RotateCw size={13} />
+            </button>
+          </div>
+          {/* quick rotate buttons */}
+          <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition flex flex-col gap-0.5">
+            <button onClick={(e) => { e.stopPropagation(); onRotate((rot + 45) % 360); }} className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow flex items-center justify-center text-[9px] font-bold text-slate-600 hover:text-indigo-600" title="Rotate 45°">
+              45°
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onRotate((rot + 15) % 360); }} className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow flex items-center justify-center text-slate-600 hover:text-indigo-600" title="Rotate 15°">
+              <RotateCw size={12} />
+            </button>
+          </div>
+          {/* live angle badge while dragging */}
+          {rotDrag && (
+            <div className="absolute left-1/2 -translate-x-1/2 -top-14 whitespace-nowrap text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-600 text-white shadow">
+              {Math.round(rot)}°
+            </div>
+          )}
+        </>
       )}
     </motion.div>
   );
