@@ -121,7 +121,7 @@ function Block({ item, color, scale, pos, rotation, onDragEnd, onRotate, dragBou
         <>
           {/* free-drag rotation handle */}
           <div
-            className="absolute left-1/2 -top-7 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition"
+            className="absolute left-1/2 -top-7 -translate-x-1/2 transition"
             style={{ opacity: rotDrag ? 1 : undefined }}
           >
             <div className="absolute left-1/2 top-5 -translate-x-1/2 w-px h-3 bg-slate-400" />
@@ -134,7 +134,7 @@ function Block({ item, color, scale, pos, rotation, onDragEnd, onRotate, dragBou
             </button>
           </div>
           {/* quick rotate buttons */}
-          <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition flex flex-col gap-0.5">
+          <div className="absolute -top-3 -right-3 transition flex flex-col gap-0.5">
             <button onClick={(e) => { e.stopPropagation(); onRotate((rot + 45) % 360); }} className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow flex items-center justify-center text-[9px] font-bold text-slate-600 hover:text-indigo-600" title="Rotate 45°">
               45°
             </button>
