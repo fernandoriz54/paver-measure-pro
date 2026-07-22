@@ -17,6 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
+import QuickMeasureBar from "@/components/quickmeasure/QuickMeasureBar";
+import AdvancedDetails from "@/components/quickmeasure/AdvancedDetails";
+import SaveToProject from "@/components/SaveToProject";
 
 export default function CircleCalc() {
   const [mode, setMode] = useState("diameter"); // diameter | radius | circumference
@@ -46,6 +49,7 @@ export default function CircleCalc() {
   return (
     <CalcShell title="Circle & Curved Area" subtitle="Area = π × Radius²" icon={CircleIcon}>
       <div className="space-y-4">
+        <QuickMeasureBar helpId="circle" guidedId="patios" />
         <div>
           <Label className="text-base font-semibold">I know the…</Label>
           <Select value={mode} onValueChange={setMode}>
@@ -161,22 +165,25 @@ export default function CircleCalc() {
             formula={`${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
         </div>
 
-        <ObstacleToolkit
-          grossArea={partialArea}
-          sections={[{ id: "circle", type: "circle", label: "Circle", params: { radius: result.radius } }]}
-          deductions={deductions}
-          setDeductions={setDeductions}
-        />
+        <SaveToProject sections={[{ label: "Circle", type: "circle", params: { radius: result.radius }, deductions, gross: partialArea, totalDeduct: activeDeduct, net: netArea }]} />
 
-        <FormulaBreakdown
-          steps={[
-            `Radius = Diameter ÷ 2 = ${formatValue(result.diameter, precision)} ÷ 2 = ${formatValue(result.radius, precision)} ft`,
-            `Diameter = Radius × 2 = ${formatValue(result.radius, precision)} × 2 = ${formatValue(result.diameter, precision)} ft`,
-            `Circumference = Diameter × ${PI} = ${formatValue(result.diameter, precision)} × ${PI} = ${formatValue(result.circumference, precision)} lin ft`,
-            `Area = ${PI} × ${formatValue(result.radius, precision)}² = ${formatValue(result.area, precision)} sq ft`,
-            isPartial ? `Partial area = ${formatValue(result.area, precision)} × ${percent}% = ${formatValue(partialArea, precision)} sq ft` : "",
-          ].filter(Boolean)}
-        />
+        <AdvancedDetails title="Deductions, Obstacles & Formula" summary="Add deductions and view the full calculation breakdown.">
+          <ObstacleToolkit
+            grossArea={partialArea}
+            sections={[{ id: "circle", type: "circle", label: "Circle", params: { radius: result.radius } }]}
+            deductions={deductions}
+            setDeductions={setDeductions}
+          />
+          <FormulaBreakdown
+            steps={[
+              `Radius = Diameter ÷ 2 = ${formatValue(result.diameter, precision)} ÷ 2 = ${formatValue(result.radius, precision)} ft`,
+              `Diameter = Radius × 2 = ${formatValue(result.radius, precision)} × 2 = ${formatValue(result.diameter, precision)} ft`,
+              `Circumference = Diameter × ${PI} = ${formatValue(result.diameter, precision)} × ${PI} = ${formatValue(result.circumference, precision)} lin ft`,
+              `Area = ${PI} × ${formatValue(result.radius, precision)}² = ${formatValue(result.area, precision)} sq ft`,
+              isPartial ? `Partial area = ${formatValue(result.area, precision)} × ${percent}% = ${formatValue(partialArea, precision)} sq ft` : "",
+            ].filter(Boolean)}
+          />
+        </AdvancedDetails>
       </div>
     </CalcShell>
   );

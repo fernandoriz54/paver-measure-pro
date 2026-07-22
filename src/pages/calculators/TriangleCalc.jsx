@@ -8,6 +8,9 @@ import { activeDeductionArea } from "@/lib/deductionUtils";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
+import QuickMeasureBar from "@/components/quickmeasure/QuickMeasureBar";
+import AdvancedDetails from "@/components/quickmeasure/AdvancedDetails";
+import SaveToProject from "@/components/SaveToProject";
 
 export default function TriangleCalc() {
   const [mode, setMode] = useState("baseHeight"); // baseHeight | threeSides
@@ -37,6 +40,7 @@ export default function TriangleCalc() {
   return (
     <CalcShell title="Triangle" subtitle="Area = Base × Height ÷ 2" icon={Triangle}>
       <div className="space-y-4">
+        <QuickMeasureBar helpId="triangle" />
         <div className="flex gap-1.5">
           <button
             onClick={() => setMode("baseHeight")}
@@ -101,33 +105,36 @@ export default function TriangleCalc() {
         <ResultCard title="Final Material (with waste)" value={formatValue(wasteResult.total, precision)} unit="sq ft"
           formula={`${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)}`} />
 
-        <ObstacleToolkit
-          grossArea={result.area}
-          sections={
-            mode === "baseHeight"
-              ? [{ id: "tri", type: "triangle", label: "Triangle", params: { base, height } }]
-              : [{ id: "tri", type: "rectangle", label: "Triangle", params: { length: Math.sqrt(result.area || 0), width: Math.sqrt(result.area || 0) } }]
-          }
-          deductions={deductions}
-          setDeductions={setDeductions}
-        />
+        <SaveToProject sections={[{ label: "Triangle", type: "triangle", params: { base, height }, deductions, gross: result.area, totalDeduct: activeDeduct, net: netArea }]} />
 
-        <FormulaBreakdown
-          steps={
-            mode === "baseHeight"
-              ? [
-                  `Base: ${formatValue(base, precision)} ft`,
-                  `Height: ${formatValue(height, precision)} ft`,
-                  `Area = ${formatValue(base, precision)} × ${formatValue(height, precision)} ÷ 2 = ${formatValue(result.area, precision)} sq ft`,
-                ]
-              : [
-                  `Sides: ${a}, ${b}, ${c} ft`,
-                  `s = (${a} + ${b} + ${c}) ÷ 2`,
-                  `Area = √(s × (s−a) × (s−b) × (s−c)) = ${formatValue(result.area, precision)} sq ft`,
-                  `Perimeter = ${a} + ${b} + ${c} = ${formatValue(result.perimeter, precision)} lin ft`,
-                ]
-          }
-        />
+        <AdvancedDetails title="Deductions, Obstacles & Formula" summary="Add deductions and view the full calculation breakdown.">
+          <ObstacleToolkit
+            grossArea={result.area}
+            sections={
+              mode === "baseHeight"
+                ? [{ id: "tri", type: "triangle", label: "Triangle", params: { base, height } }]
+                : [{ id: "tri", type: "rectangle", label: "Triangle", params: { length: Math.sqrt(result.area || 0), width: Math.sqrt(result.area || 0) } }]
+            }
+            deductions={deductions}
+            setDeductions={setDeductions}
+          />
+          <FormulaBreakdown
+            steps={
+              mode === "baseHeight"
+                ? [
+                    `Base: ${formatValue(base, precision)} ft`,
+                    `Height: ${formatValue(height, precision)} ft`,
+                    `Area = ${formatValue(base, precision)} × ${formatValue(height, precision)} ÷ 2 = ${formatValue(result.area, precision)} sq ft`,
+                  ]
+                : [
+                    `Sides: ${a}, ${b}, ${c} ft`,
+                    `s = (${a} + ${b} + ${c}) ÷ 2`,
+                    `Area = √(s × (s−a) × (s−b) × (s−c)) = ${formatValue(result.area, precision)} sq ft`,
+                    `Perimeter = ${a} + ${b} + ${c} = ${formatValue(result.perimeter, precision)} lin ft`,
+                  ]
+            }
+          />
+        </AdvancedDetails>
       </div>
     </CalcShell>
   );

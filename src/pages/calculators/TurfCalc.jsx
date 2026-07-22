@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
 import { squareSection, activeDeductionArea } from "@/lib/deductionUtils";
+import QuickMeasureBar from "@/components/quickmeasure/QuickMeasureBar";
+import AdvancedDetails from "@/components/quickmeasure/AdvancedDetails";
+import SaveToProject from "@/components/SaveToProject";
 
 export default function TurfCalc() {
   const [grossArea, setGrossArea] = useState(0);
@@ -40,6 +43,7 @@ export default function TurfCalc() {
   return (
     <CalcShell title="Turf Calculator" subtitle="Gross − deductions + waste = final quantity" icon={Sprout}>
       <div className="space-y-4">
+        <QuickMeasureBar helpId="turf" guidedId="turf" />
         <MeasurementInput label="Gross Lawn Area" onChange={setGrossArea} />
         <MeasurementInput label="Existing Concrete Area" onChange={setConcreteArea} />
         <MeasurementInput label="Walkway Area" onChange={setWalkwayArea} />
@@ -94,23 +98,26 @@ export default function TurfCalc() {
           <ResultCard title="Approx. Number of Seams" value={numSeams} unit="seams" />
         </div>
 
-        <ObstacleToolkit
-          grossArea={grossArea}
-          sections={[squareSection(grossArea, "Lawn")]}
-          deductions={deductions}
-          setDeductions={setDeductions}
-        />
+        <SaveToProject sections={[{ label: "Lawn", type: "rectangle", params: { length: Math.sqrt(grossArea) || 0, width: Math.sqrt(grossArea) || 0 }, deductions, gross: grossArea, totalDeduct: totalDeductions + activeDeduct, net: netTurf }]} />
 
-        <FormulaBreakdown
-          steps={[
-            `Gross = ${formatValue(grossArea, precision)} sq ft`,
-            `Deductions = ${formatValue(totalDeductions, precision)} sq ft`,
-            `Net = ${formatValue(grossArea, precision)} − ${formatValue(totalDeductions, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netTurf, precision)} sq ft`,
-            `Waste = ${formatValue(netTurf, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
-            `Final = ${formatValue(netTurf, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(totalTurf, precision)} sq ft`,
-            `Roll lengths = ${formatValue(totalTurf, precision)} ÷ ${rollWidth} ft = ${formatValue(rollLengths, precision)} lin ft`,
-          ]}
-        />
+        <AdvancedDetails title="Obstacles, Roll Layout & Formula" summary="Add obstacle deductions and view the full calculation breakdown.">
+          <ObstacleToolkit
+            grossArea={grossArea}
+            sections={[squareSection(grossArea, "Lawn")]}
+            deductions={deductions}
+            setDeductions={setDeductions}
+          />
+          <FormulaBreakdown
+            steps={[
+              `Gross = ${formatValue(grossArea, precision)} sq ft`,
+              `Deductions = ${formatValue(totalDeductions, precision)} sq ft`,
+              `Net = ${formatValue(grossArea, precision)} − ${formatValue(totalDeductions, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netTurf, precision)} sq ft`,
+              `Waste = ${formatValue(netTurf, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
+              `Final = ${formatValue(netTurf, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(totalTurf, precision)} sq ft`,
+              `Roll lengths = ${formatValue(totalTurf, precision)} ÷ ${rollWidth} ft = ${formatValue(rollLengths, precision)} lin ft`,
+            ]}
+          />
+        </AdvancedDetails>
       </div>
     </CalcShell>
   );

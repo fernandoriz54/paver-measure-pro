@@ -4,6 +4,7 @@ import {
   Plus,
   Square,
   Circle as CircleIcon,
+  Triangle as TriangleIcon,
   Sprout,
   Car,
   Footprints,
@@ -17,25 +18,33 @@ import {
   BookOpen,
   GraduationCap,
   Package,
+  Layers,
+  Ruler,
+  DoorOpen,
   Sparkles,
   Eye,
   ChevronRight,
 } from "lucide-react";
 
-// Large visual categories. "guided" = has the new Guided Measurement flow;
-// otherwise routes to the existing calculator (functionality preserved).
+// Quick Measure is the default for every category. guidedId links to the
+// optional step-by-step flow (opened from inside the calculator, not here).
 const CATEGORIES = [
-  { label: "Patio or Rectangle", blurb: "Square, L, U & freeform patios.", icon: Square, color: "bg-sky-700", path: "/guided/patios", guided: true },
-  { label: "Walkway or Curved Path", blurb: "Straight, tapered, curved & slabs.", icon: Footprints, color: "bg-cyan-700", path: "/guided/walkways", guided: true },
-  { label: "Driveway", blurb: "Main slab, flares, apron & garage.", icon: Car, color: "bg-slate-700", path: "/guided/driveways", guided: true },
-  { label: "Turf or Lawn", blurb: "Turf area with deductions & seams.", icon: Sprout, color: "bg-green-700", path: "/guided/turf", guided: true },
-  { label: "Steps and Stairs", blurb: "Rise, run, bullnose & surface area.", icon: Shovel, color: "bg-amber-700", path: "/guided/steps", guided: true },
-  { label: "Walls and Planters", blurb: "Face area, caps, ends & corners.", icon: Box, color: "bg-orange-700", path: "/guided/walls", guided: true },
-  { label: "Borders and Edging", blurb: "Linear run, rows, rings & units.", icon: Grid3x3, color: "bg-rose-700", path: "/guided/borders", guided: true },
-  { label: "Circle or Fire Pit", blurb: "Diameter, ring & seating wall.", icon: CircleIcon, color: "bg-indigo-700", path: "/calc/circle", guided: false },
-  { label: "Irregular Area", blurb: "Divide into simple shapes.", icon: Crop, color: "bg-teal-700", path: "/calc/irregular", guided: false },
-  { label: "Obstacles and Deductions", blurb: "AC, trees, columns, drains & pads.", icon: Ban, color: "bg-fuchsia-700", path: "/calc/combined", guided: false },
-  { label: "Complete Project", blurb: "Sections A, B, C + layout plan.", icon: LayoutGrid, color: "bg-emerald-800", path: "/builder", guided: false },
+  { label: "Patio or Rectangle", blurb: "Square & rectangular patios & slabs.", icon: Square, color: "bg-sky-700", path: "/calc/rectangle", guidedId: "patios" },
+  { label: "Walkway or Path", blurb: "Straight, tapered or curved walkways.", icon: Footprints, color: "bg-cyan-700", path: "/calc/walkway", guidedId: "walkways" },
+  { label: "Driveway", blurb: "Main slab, flares, apron & garage.", icon: Car, color: "bg-slate-700", path: "/calc/driveway", guidedId: "driveways" },
+  { label: "Turf or Lawn", blurb: "Turf area with deductions & seams.", icon: Sprout, color: "bg-green-700", path: "/calc/turf", guidedId: "turf" },
+  { label: "Steps and Stairs", blurb: "Rise, run, bullnose & surface area.", icon: Shovel, color: "bg-amber-700", path: "/calc/steps", guidedId: "steps" },
+  { label: "Walls and Planters", blurb: "Face area, caps, ends & corners.", icon: Box, color: "bg-orange-700", path: "/calc/walls", guidedId: "walls" },
+  { label: "Borders and Edging", blurb: "Linear run, rows & inside edges.", icon: Grid3x3, color: "bg-rose-700", path: "/calc/border", guidedId: "borders" },
+  { label: "Circle or Fire Pit", blurb: "Diameter, radius or circumference.", icon: CircleIcon, color: "bg-indigo-700", path: "/calc/circle", guidedId: "patios" },
+  { label: "Triangle", blurb: "Base × height or three sides.", icon: TriangleIcon, color: "bg-teal-700", path: "/calc/triangle" },
+  { label: "Irregular Area", blurb: "Divide into simple shapes.", icon: Crop, color: "bg-fuchsia-700", path: "/calc/irregular", guidedId: "irregular" },
+  { label: "Pavers", blurb: "Field, border & accent with waste.", icon: Layers, color: "bg-violet-700", path: "/calc/paver", guidedId: "paver" },
+  { label: "Material Quantity", blurb: "Pieces, pallets & cost.", icon: Package, color: "bg-amber-800", path: "/calc/material", guidedId: "material" },
+  { label: "Obstacles & Deductions", blurb: "AC, trees, columns, drains & pads.", icon: Ban, color: "bg-rose-800", path: "/calc/combined", guidedId: "combined" },
+  { label: "Entrance & Front Steps", blurb: "Walkway, porch, landing, steps & bullnose.", icon: DoorOpen, color: "bg-cyan-800", path: "/calc/entrance", guidedId: "entrance" },
+  { label: "Unit Converter", blurb: "Feet, inches, sq ft, linear ft.", icon: Ruler, color: "bg-slate-600", path: "/calc/converter", guidedId: "unit" },
+  { label: "Complete Project", blurb: "Sections A, B, C + layout plan.", icon: LayoutGrid, color: "bg-emerald-800", path: "/builder" },
 ];
 
 export default function Dashboard() {
@@ -80,16 +89,18 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-800 text-sm leading-tight">{c.label}</span>
-                      {c.guided && <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded">GUIDED</span>}
+                      <span className="bg-sky-100 text-sky-700 text-[10px] font-bold px-1.5 py-0.5 rounded">QUICK</span>
                     </div>
                     <p className="text-xs text-slate-500 mb-2 leading-snug">{c.blurb}</p>
                     <div className="flex gap-2">
                       <button onClick={() => navigate(c.path)} className="flex items-center gap-1 bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg active:scale-95">
-                        Start Measuring <ChevronRight size={14} />
+                        Open <ChevronRight size={14} />
                       </button>
-                      <button onClick={() => navigate("/how-to")} className="flex items-center gap-1 border border-slate-300 text-slate-600 text-xs font-bold px-3 py-2 rounded-lg active:scale-95">
-                        <Eye size={14} /> View Example
-                      </button>
+                      {c.guidedId && (
+                        <button onClick={() => navigate(`/guided/${c.guidedId}`)} className="flex items-center gap-1 border border-slate-300 text-slate-600 text-xs font-bold px-3 py-2 rounded-lg active:scale-95">
+                          <Eye size={14} /> Guide Me
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

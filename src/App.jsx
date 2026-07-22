@@ -24,6 +24,7 @@ import DrivewayCalc from '@/pages/calculators/DrivewayCalc';
 import WalkwayCalc from '@/pages/calculators/WalkwayCalc';
 import LawnCalc from '@/pages/calculators/LawnCalc';
 import StepsCalc from '@/pages/calculators/StepsCalc';
+import WallsCalc from '@/pages/calculators/WallsCalc';
 import BorderCalc from '@/pages/calculators/BorderCalc';
 import IrregularCalc from '@/pages/calculators/IrregularCalc';
 import MaterialCalc from '@/pages/calculators/MaterialCalc';
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
         <Route path="/calc/walkway" element={<WalkwayCalc />} />
         <Route path="/calc/lawn" element={<LawnCalc />} />
         <Route path="/calc/steps" element={<StepsCalc />} />
+        <Route path="/calc/walls" element={<WallsCalc />} />
         <Route path="/calc/border" element={<BorderCalc />} />
         <Route path="/calc/irregular" element={<IrregularCalc />} />
         <Route path="/calc/material" element={<MaterialCalc />} />

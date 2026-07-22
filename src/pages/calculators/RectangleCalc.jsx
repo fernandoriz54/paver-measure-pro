@@ -8,6 +8,9 @@ import { activeDeductionArea } from "@/lib/deductionUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
+import QuickMeasureBar from "@/components/quickmeasure/QuickMeasureBar";
+import AdvancedDetails from "@/components/quickmeasure/AdvancedDetails";
+import SaveToProject from "@/components/SaveToProject";
 
 export default function RectangleCalc() {
   const [length, setLength] = useState(0);
@@ -25,6 +28,7 @@ export default function RectangleCalc() {
   return (
     <CalcShell title="Rectangle & Square" subtitle="Area = Length × Width" icon={Square}>
       <div className="space-y-4">
+        <QuickMeasureBar helpId="rectangle" guidedId="patios" />
         <MeasurementInput label="Length" onChange={setLength} hint="e.g. 46 ft 3 in" />
         <MeasurementInput label="Width" onChange={setWidth} hint="e.g. 5 ft" />
 
@@ -90,25 +94,28 @@ export default function RectangleCalc() {
           />
         </div>
 
-        <ObstacleToolkit
-          grossArea={result.area}
-          sections={[{ id: "rect", type: "rectangle", label: "Rectangle", params: { length, width } }]}
-          deductions={deductions}
-          setDeductions={setDeductions}
-        />
+        <SaveToProject sections={[{ label: "Rectangle", type: "rectangle", params: { length, width }, deductions, gross: result.area, totalDeduct: activeDeduct, net: netArea }]} />
 
-        <FormulaBreakdown
-          steps={[
-            `Length: ${formatValue(length, precision)} ft`,
-            `Width: ${formatValue(width, precision)} ft`,
-            `Gross area = ${formatValue(length, precision)} × ${formatValue(width, precision)} = ${formatValue(result.area, precision)} sq ft`,
-            `Perimeter = 2 × (${formatValue(length, precision)} + ${formatValue(width, precision)}) = ${formatValue(result.perimeter, precision)} lin ft`,
-            `Active deductions = ${formatValue(activeDeduct, precision)} sq ft`,
-            `Net area = ${formatValue(result.area, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)} sq ft`,
-            `Waste = ${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
-            `Final = ${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)} sq ft`,
-          ]}
-        />
+        <AdvancedDetails title="Deductions, Obstacles & Formula" summary="Add deductions and view the full calculation breakdown.">
+          <ObstacleToolkit
+            grossArea={result.area}
+            sections={[{ id: "rect", type: "rectangle", label: "Rectangle", params: { length, width } }]}
+            deductions={deductions}
+            setDeductions={setDeductions}
+          />
+          <FormulaBreakdown
+            steps={[
+              `Length: ${formatValue(length, precision)} ft`,
+              `Width: ${formatValue(width, precision)} ft`,
+              `Gross area = ${formatValue(length, precision)} × ${formatValue(width, precision)} = ${formatValue(result.area, precision)} sq ft`,
+              `Perimeter = 2 × (${formatValue(length, precision)} + ${formatValue(width, precision)}) = ${formatValue(result.perimeter, precision)} lin ft`,
+              `Active deductions = ${formatValue(activeDeduct, precision)} sq ft`,
+              `Net area = ${formatValue(result.area, precision)} − ${formatValue(activeDeduct, precision)} = ${formatValue(netArea, precision)} sq ft`,
+              `Waste = ${formatValue(netArea, precision)} × ${waste}% = ${formatValue(wasteResult.wasteAmount, precision)} sq ft`,
+              `Final = ${formatValue(netArea, precision)} + ${formatValue(wasteResult.wasteAmount, precision)} = ${formatValue(wasteResult.total, precision)} sq ft`,
+            ]}
+          />
+        </AdvancedDetails>
       </div>
     </CalcShell>
   );

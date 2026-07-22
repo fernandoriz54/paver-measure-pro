@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import ObstacleToolkit from "@/components/ObstacleToolkit";
 import { activeDeductionLinear } from "@/lib/deductionUtils";
+import QuickMeasureBar from "@/components/quickmeasure/QuickMeasureBar";
+import AdvancedDetails from "@/components/quickmeasure/AdvancedDetails";
+import SaveToProject from "@/components/SaveToProject";
 
 export default function BorderCalc() {
   const [linearFeet, setLinearFeet] = useState(203.89);
