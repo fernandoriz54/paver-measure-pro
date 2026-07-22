@@ -3,16 +3,18 @@ import { calcSteps, applyWaste, validateMeasurements, WASTE_OPTIONS, formatValue
 
 const P = "hundredth";
 const fmt = (v) => formatValue(v, P);
+const req = (key, label, why, opts = {}) => ({ key, label, why, optional: false, ...opts });
 
 // ---------- STEPS & STAIRS ----------
 const STEPS_TYPE_CHOICES = [
-  { id: "single", label: "Single Step", blurb: "One tread and riser.", diagram: "stepsSide" },
-  { id: "equal", label: "Multiple Equal Steps", blurb: "All steps the same size.", diagram: "stepsSide" },
-  { id: "different", label: "Different-Sized Steps", blurb: "Each step entered separately.", diagram: "stepsSide" },
-  { id: "landing", label: "Steps with Landing", blurb: "Stairs plus a mid or top landing.", diagram: "stepsSide" },
-  { id: "porch", label: "Porch and Steps", blurb: "Wide landing with steps off it.", diagram: "stepsSide" },
-  { id: "curved", label: "Curved Steps", blurb: "Steps that follow a curve.", diagram: "stepsSide" },
-  { id: "cover", label: "Existing Steps Being Covered", blurb: "Overlaying existing stairs.", diagram: "stepsSide" },
+  { id: "single", label: "Single Step", blurb: "One tread and riser.", bestUse: "A single entry step or threshold step.", difficulty: "Easy", diagram: "stepsSide", preview: { numSteps: 1, treadDepth: 1, riserHeight: 0.667, stepWidth: 4 }, requiredMeasurements: ["Width", "Tread depth", "Riser height"] },
+  { id: "equal", label: "Equal Straight Steps", blurb: "All steps the same size.", bestUse: "A standard straight staircase with identical treads.", difficulty: "Easy", diagram: "stepsSide", preview: { numSteps: 3, treadDepth: 1, riserHeight: 0.667, stepWidth: 6 }, requiredMeasurements: ["Width", "Tread depth", "Riser height", "Step count", "Bullnose", "Total rise", "Total run"] },
+  { id: "different", label: "Unequal Steps", blurb: "Each step entered separately.", bestUse: "Windings or stairs where each tread/riser differs.", difficulty: "Complex", diagram: "stepsSide", preview: { numSteps: 3, treadDepth: 1, riserHeight: 0.667, stepWidth: 5 }, requiredMeasurements: ["Width", "Each tread depth", "Each riser height", "Step count"] },
+  { id: "landing", label: "Steps with Landing", blurb: "Stairs plus a mid or top landing.", bestUse: "Stairs that land on a porch or mid-platform.", difficulty: "Medium", diagram: "stepsSide", preview: { numSteps: 3, treadDepth: 1, riserHeight: 0.667, stepWidth: 6, landingDepth: 4, numLandings: 1 }, requiredMeasurements: ["Width", "Tread depth", "Riser height", "Landing length & width", "Bullnose", "Side returns"] },
+  { id: "porch", label: "Porch and Steps", blurb: "Wide landing with steps off it.", bestUse: "Entry porch with steps leading down.", difficulty: "Medium", diagram: "stepsSide", preview: { numSteps: 2, treadDepth: 1, riserHeight: 0.583, stepWidth: 8, landingDepth: 6, numLandings: 1 }, requiredMeasurements: ["Porch length & width", "Step count", "Riser height", "Bullnose"] },
+  { id: "wide", label: "Wide Entry Steps", blurb: "Broad steps spanning the entry.", bestUse: "Grand entry steps that span the full facade.", difficulty: "Easy", diagram: "stepsSide", preview: { numSteps: 2, treadDepth: 1.5, riserHeight: 0.583, stepWidth: 12 }, requiredMeasurements: ["Total width", "Tread depth", "Riser height", "Step count"] },
+  { id: "curved", label: "Curved Steps", blurb: "Steps that follow a curve.", bestUse: "Steps that fan or curve along a radius.", difficulty: "Complex", diagram: "stepsSide", preview: { numSteps: 4, treadDepth: 1, riserHeight: 0.583, stepWidth: 6 }, requiredMeasurements: ["Inner & outer width", "Tread depth", "Riser height", "Step count", "Curve radius"] },
+  { id: "sidewall", label: "Steps with Side Walls", blurb: "Steps flanked by seating/retaining walls.", bestUse: "Steps between two wing walls.", difficulty: "Medium", diagram: "stepsSide", preview: { numSteps: 3, treadDepth: 1, riserHeight: 0.667, stepWidth: 5 }, requiredMeasurements: ["Step width", "Tread depth", "Riser height", "Side wall height & length"] },
 ];
 
 function stepsHelp(field) {
@@ -34,6 +36,32 @@ const stepsConfig = {
   subtitle: "Rise, run, bullnose & surface area",
   icon: Shovel,
   typeChoices: STEPS_TYPE_CHOICES,
+  expectedFields(typeId, v) {
+    const base = [
+      req("stepWidth", "Step width", "The full staircase width drives surface and bullnose totals."),
+      req("treadDepth", "Tread depth", "Each tread depth times width gives tread surface area."),
+      req("riserHeight", "Riser height", "Riser height gives total rise and the riser-face area."),
+      req("numSteps", "Number of steps", "The step count scales all step-based totals."),
+      { key: "landingDepth", label: "Landing depth", optional: true, allowZero: true },
+      { key: "numLandings", label: "Number of landings", optional: true, allowZero: true },
+      { key: "bullnosePieceLen", label: "Bullnose piece length", optional: true, allowZero: true },
+      { key: "waste", label: "Waste %", optional: true, allowZero: true },
+    ];
+    if (typeId === "different") {
+      const n = Math.max(0, Math.round(v.numSteps || 0));
+      const per = [];
+      for (let i = 1; i <= n; i++) {
+        per.push(req(`tread_${i}`, `Step ${i} tread depth`, "Each tread may differ on a winding stair."));
+        per.push(req(`riser_${i}`, `Step ${i} riser height`, "Each riser may differ."));
+      }
+      return [req("stepWidth", "Step width"), req("numSteps", "Number of steps"), ...per, { key: "waste", label: "Waste %", optional: true, allowZero: true }];
+    }
+    if (typeId === "porch" || typeId === "landing") {
+      // landing depth matters but still optional (0 = no landing)
+      return base;
+    }
+    return base;
+  },
   getSteps(typeId, v) {
     const common = [
       { id: "stepWidth", question: "What is the step width? (across the front, left to right)", field: "stepWidth", unit: "ft", inputType: "length", help: stepsHelp("stepWidth"), diagram: "stepsSide", highlight: "stepWidth" },
@@ -58,6 +86,24 @@ const stepsConfig = {
       { id: "waste", question: "Waste %?", field: "waste", unit: "", inputType: "select", options: WASTE_OPTIONS, help: stepsHelp("waste"), diagram: "stepsSide" },
     ];
   },
+  verify(typeId, v, results) {
+    const out = [];
+    const n = Math.round(v.numSteps || 0);
+    const riser = v.riserHeight || 0;
+    const tread = v.treadDepth || 0;
+    if (n > 0 && riser > 8 / 12) out.push({ id: "steep_riser", severity: "warning", field: "riserHeight", fixable: true, message: "Riser over 8 in — may be too steep.", why: "Risers above 8 in are uncomfortable and may not meet local code.", howToVerify: "Re-measure one riser face; confirm it is the vertical, not diagonal." });
+    if (n > 0 && riser > 0 && riser < 4 / 12) out.push({ id: "shallow_riser", severity: "warning", field: "riserHeight", fixable: true, message: "Riser under 4 in — unusually shallow.", why: "Very shallow risers are a trip hazard.", howToVerify: "Re-measure the riser face height." });
+    if (tread > 0 && tread < 10 / 12) out.push({ id: "shallow_tread", severity: "warning", field: "treadDepth", fixable: true, message: "Tread under 10 in — unusually shallow.", why: "Shallow treads reduce foot room on each step.", howToVerify: "Measure nose-to-riser horizontally." });
+    const numLandings = Math.round(v.numLandings || 0);
+    if (numLandings > 0 && numLandings >= n) out.push({ id: "landing_double", severity: "warning", field: "numLandings", fixable: true, message: "Landing count near step count — landing may be counted as a step.", why: "Double-counting a landing inflates step surface and bullnose.", howToVerify: "Count only treads you step on; landings are separate." });
+    if (typeId === "different" && n > 0) {
+      for (let i = 1; i <= n; i++) {
+        if (v[`tread_${i}`] == null) out.push({ id: `missing_tread_${i}`, severity: "error", field: `tread_${i}`, fixable: true, message: `Step ${i} tread depth missing.`, why: "Each step's tread is required for an unequal-step layout.", howToVerify: `Measure step ${i}'s tread nose-to-riser.` });
+        if (v[`riser_${i}`] == null) out.push({ id: `missing_riser_${i}`, severity: "error", field: `riser_${i}`, fixable: true, message: `Step ${i} riser height missing.`, why: "Each riser is required for total rise.", howToVerify: `Measure step ${i}'s riser face.` });
+      }
+    }
+    return out;
+  },
   compute(typeId, v) {
     if (typeId === "different") {
       const n = Math.max(0, Math.round(v.numSteps || 0));
@@ -72,16 +118,11 @@ const stepsConfig = {
         totalRise += r;
       }
       const bullnoseLinear = width * n;
-      const sideEdgeLinear = surface > 0 ? (n ? 0 : 0) : 0; // kept simple for per-step
       const wasteCalc = applyWaste(surface, waste);
-      const warnings = [];
-      if (n > 0 && totalRise / n > 8 / 12) warnings.push("Average riser over 8 in — may be too steep.");
-      if (n > 0 && totalRise / n < 4 / 12) warnings.push("Average riser under 4 in — unusually shallow.");
-      if (width <= 0) warnings.push("Step width is missing.");
       return {
         gross: surface, deductions: 0, net: surface, linear: bullnoseLinear,
         wastePercent: waste, wasteAmount: wasteCalc.wasteAmount, total: wasteCalc.total,
-        warnings,
+        warnings: [],
         formulaSteps: [
           `Step surface = Σ(tread × width) = ${fmt(surface)} sq ft`,
           `Riser face = Σ(riser × width) = ${fmt(riserFace)} sq ft`,
@@ -114,11 +155,6 @@ const stepsConfig = {
     const bullnosePieces = bullnosePieceLen > 0 ? Math.ceil(bullnoseLinear / (bullnosePieceLen / 12)) : 0;
     const wasteCalc = applyWaste(r.totalStepArea, waste);
     const warnings = validateMeasurements({ totalHeight, numSteps, wastePercent: waste }, "steps");
-    if (riser > 0 && riser > 8 / 12) warnings.push("Riser over 8 in — may be too steep.");
-    if (tread > 0 && tread < 10 / 12) warnings.push("Tread under 10 in — unusually shallow.");
-    if (numLandings > 0 && numLandings >= numSteps) warnings.push("Landing count near step count — make sure landings aren't counted as steps.");
-    if (width <= 0) warnings.push("Step width is missing.");
-    if (riser <= 0) warnings.push("Riser height is missing — cannot compute rise per step.");
     return {
       gross: r.totalStepArea, deductions: 0, net: r.totalStepArea, linear: bullnoseLinear,
       wastePercent: waste, wasteAmount: wasteCalc.wasteAmount, total: wasteCalc.total, bullnosePieces, sideEdgeLinear,
@@ -149,16 +185,16 @@ const stepsConfig = {
 
 // ---------- WALLS & PLANTERS ----------
 const WALL_TYPE_CHOICES = [
-  { id: "straight", label: "Straight Wall", blurb: "One segment, two ends.", diagram: "wallElevation" },
-  { id: "L", label: "L-Shaped Wall", blurb: "Two segments meeting at a corner.", diagram: "wallPlan" },
-  { id: "U", label: "U-Shaped Wall", blurb: "Three connected segments.", diagram: "wallPlan" },
-  { id: "curved", label: "Curved Wall", blurb: "Wheel length or chord + depth.", diagram: "wallPlan" },
-  { id: "treewell", label: "Circular Tree Well", blurb: "Ring around a tree.", diagram: "wallPlan" },
-  { id: "planter", label: "Raised Planter", blurb: "Enclosed planter box.", diagram: "wallPlan" },
-  { id: "retaining", label: "Retaining Wall", blurb: "Holds back soil.", diagram: "wallElevation" },
-  { id: "seating", label: "Seating Wall", blurb: "Low wall for seating.", diagram: "wallElevation" },
-  { id: "columns", label: "Wall with Columns", blurb: "Pillars between segments.", diagram: "wallPlan" },
-  { id: "multiple", label: "Multiple Connected", blurb: "Segment A, B, C and more.", diagram: "wallPlan" },
+  { id: "straight", label: "Straight Wall", blurb: "One segment, two ends.", bestUse: "A single freestanding or retaining run.", difficulty: "Easy", diagram: "wallElevation", preview: { wallLength: 20, wallHeight: 2 }, requiredMeasurements: ["Wall length", "Visible height", "Block depth", "Exposed ends"] },
+  { id: "L", label: "L-Shaped Wall", blurb: "Two segments meeting at a corner.", bestUse: "Two walls forming an L with a shared corner.", difficulty: "Medium", diagram: "wallPlan", preview: { segments: [{ length: 20, height: 2 }, { length: 10, height: 2 }] }, requiredMeasurements: ["Each segment length & height", "Corners", "Exposed ends", "Caps"] },
+  { id: "U", label: "U-Shaped Wall", blurb: "Three connected segments.", bestUse: "A wall wrapping three sides (e.g. seating alcove).", difficulty: "Medium", diagram: "wallPlan", preview: { segments: [{ length: 10, height: 2 }, { length: 12, height: 2 }, { length: 10, height: 2 }] }, requiredMeasurements: ["3 segment lengths & heights", "Corners", "Exposed ends"] },
+  { id: "curved", label: "Curved Wall", blurb: "Wheel length or chord + depth.", bestUse: "A wall that bends along a radius.", difficulty: "Complex", diagram: "wallPlan", preview: { segments: [{ length: 24, height: 2 }] }, requiredMeasurements: ["Wheel length", "Chord & depth", "Height", "Caps"] },
+  { id: "treewell", label: "Circular Tree Well", blurb: "Ring around a tree.", bestUse: "A ring wall enclosing a tree.", difficulty: "Complex", diagram: "wallPlan", preview: { segments: [{ length: 31, height: 1.5 }] }, requiredMeasurements: ["Ring circumference", "Diameter", "Height", "Caps"] },
+  { id: "planter", label: "Raised Planter", blurb: "Enclosed planter box.", bestUse: "A closed planter with soil interior.", difficulty: "Medium", diagram: "wallPlan", preview: { segments: [{ length: 6, height: 1.5 }, { length: 4, height: 1.5 }, { length: 6, height: 1.5 }, { length: 4, height: 1.5 }] }, requiredMeasurements: ["Wall segments", "Wall height", "Cap length", "Inside corners", "Soil interior"] },
+  { id: "retaining", label: "Retaining Wall", blurb: "Holds back soil.", bestUse: "A wall retaining a slope.", difficulty: "Medium", diagram: "wallElevation", preview: { wallLength: 30, wallHeight: 3 }, requiredMeasurements: ["Length", "Exposed height", "Buried course", "Block depth"] },
+  { id: "seating", label: "Seating Wall", blurb: "Low wall for seating.", bestUse: "A low wall around a fire pit or patio.", difficulty: "Easy", diagram: "wallElevation", preview: { wallLength: 16, wallHeight: 1.5 }, requiredMeasurements: ["Length", "Height", "Caps", "Exposed ends"] },
+  { id: "columns", label: "Wall with Columns", blurb: "Pillars between segments.", bestUse: "Wall sections broken up by pillars.", difficulty: "Complex", diagram: "wallPlan", preview: { segments: [{ length: 8, height: 2 }, { length: 8, height: 2 }] }, requiredMeasurements: ["Segment lengths", "Pillar count", "Height", "Caps"] },
+  { id: "multiple", label: "Multiple Connected", blurb: "Segment A, B, C and more.", bestUse: "A custom connected wall layout.", difficulty: "Complex", diagram: "wallPlan", preview: { segments: [{ length: 12, height: 2 }, { length: 8, height: 2 }, { length: 6, height: 2 }] }, requiredMeasurements: ["Each segment length & height", "Corners", "Exposed ends"] },
 ];
 
 const MULTI_TYPES = ["L", "U", "multiple", "curved", "treewell", "planter", "columns"];
@@ -186,6 +222,32 @@ const wallsConfig = {
   subtitle: "Face area, caps, ends & corners",
   icon: Box,
   typeChoices: WALL_TYPE_CHOICES,
+  expectedFields(typeId, v) {
+    if (MULTI_TYPES.includes(typeId)) {
+      return [
+        req("numSegments", "Number of segments", "Sets how many wall lengths you'll enter."),
+        req("segments", "Wall segments", "Each segment's length and height make up the face area."),
+        { key: "blockDepth", label: "Block depth", optional: true, allowZero: true },
+        { key: "caps", label: "Cap style", optional: true, allowZero: true },
+        { key: "exposedEnds", label: "Exposed ends", optional: true, allowZero: true },
+        { key: "corners", label: "Corners", optional: true, allowZero: true },
+        { key: "openings", label: "Openings", optional: true, allowZero: true },
+        { key: "waste", label: "Waste %", optional: true, allowZero: true },
+      ];
+    }
+    return [
+      req("wallLength", "Wall length", "Length times height gives the wall-face area."),
+      req("wallHeight", "Visible wall height", "Exposed height only — excludes the buried course."),
+      { key: "blockDepth", label: "Block depth", optional: true, allowZero: true },
+      { key: "courses", label: "Courses", optional: true, allowZero: true },
+      { key: "buriedCourse", label: "Buried course", optional: true, allowZero: true },
+      { key: "caps", label: "Cap style", optional: true, allowZero: true },
+      { key: "exposedEnds", label: "Exposed ends", optional: true, allowZero: true },
+      { key: "corners", label: "Corners", optional: true, allowZero: true },
+      { key: "openings", label: "Openings", optional: true, allowZero: true },
+      { key: "waste", label: "Waste %", optional: true, allowZero: true },
+    ];
+  },
   getSteps(typeId, v) {
     if (MULTI_TYPES.includes(typeId)) {
       const defaultN = typeId === "L" ? 2 : typeId === "U" ? 3 : Math.max(1, Math.round(v.numSegments || 1));
@@ -213,6 +275,19 @@ const wallsConfig = {
       { id: "waste", question: "Waste %?", field: "waste", unit: "", inputType: "select", options: WASTE_OPTIONS, help: wallHelp("waste"), diagram: "wallElevation" },
     ];
   },
+  verify(typeId, v, results) {
+    const out = [];
+    const segs = Array.isArray(v.segments) ? v.segments : v.wallLength ? [{ length: v.wallLength, height: v.wallHeight || 0 }] : [];
+    const blockDepth = v.blockDepth || 0;
+    const exposedEnds = Math.round(v.exposedEnds || 0);
+    const corners = Math.round(v.corners || 0);
+    if (segs.some((s) => !s.height)) out.push({ id: "seg_height", severity: "warning", field: "segments", fixable: true, message: "A segment is missing visible height.", why: "Face area is length × height — missing height makes that segment's area zero.", howToVerify: "Measure each segment's exposed height." });
+    if (segs.some((s) => !s.length)) out.push({ id: "seg_length", severity: "warning", field: "segments", fixable: true, message: "A segment is missing length.", why: "Length is needed for face area and cap linear.", howToVerify: "Measure each segment end to end." });
+    if (exposedEnds > 0 && !blockDepth) out.push({ id: "ends_no_depth", severity: "warning", field: "blockDepth", fixable: true, message: "Exposed ends entered but block depth missing.", why: "End area = block depth × height; without depth the end area can't be calculated.", howToVerify: "Measure the front-to-back depth of one block." });
+    if (corners > 0 && segs.length === 1 && !MULTI_TYPES.includes(typeId)) out.push({ id: "corner_straight", severity: "warning", field: "corners", fixable: true, message: "Corners entered for a single straight wall.", why: "A single straight run has no shared corners — this may double-count cap linear.", howToVerify: "Set corners to 0, or switch to a multi-segment type." });
+    if (results && results.net < 0) out.push({ id: "openings_over", severity: "error", field: "openings", fixable: true, message: "Openings are larger than the wall face.", why: "Net face area went negative — openings likely entered wrong.", howToVerify: "Check openings area vs. total face area." });
+    return out;
+  },
   compute(typeId, v) {
     let segs;
     if (MULTI_TYPES.includes(typeId)) {
@@ -227,17 +302,11 @@ const wallsConfig = {
     const corners = Math.round(v.corners || 0);
     const openings = v.openings || 0;
     const waste = v.waste == null ? 10 : v.waste;
-    const capStyle = v.caps || "none";
     const endArea = exposedEnds * blockDepth * (segs.length ? Math.max(...segs.map((s) => s.height || 0)) : 0);
     const netArea = Math.max(0, faceArea - openings);
     const wasteCalc = applyWaste(netArea, waste);
-    const capsLinearAdj = Math.max(0, capsLinear - corners); // shared corners not double-counted
+    const capsLinearAdj = Math.max(0, capsLinear - corners);
     const warnings = [];
-    if (segs.some((s) => !s.height)) warnings.push("A segment is missing visible height — face area will be incomplete.");
-    if (segs.some((s) => !s.length)) warnings.push("A segment is missing length.");
-    if (exposedEnds > 0 && !blockDepth) warnings.push("Exposed ends entered but block depth missing — end area can't be calculated.");
-    if (corners > 0 && segs.length === 1 && !MULTI_TYPES.includes(typeId)) warnings.push("Corners entered for a single straight wall — check this is intended.");
-    if (netArea < 0) warnings.push("Openings are larger than the wall face — check your measurements.");
     const reviewRows = [
       { label: "Wall-face area", value: faceArea, unit: "sq ft", kind: "gross" },
       { label: "Openings deducted", value: openings, unit: "sq ft", kind: "deduct" },

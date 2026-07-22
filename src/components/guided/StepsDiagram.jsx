@@ -3,7 +3,13 @@ import { DimLine, fmtLen } from "./GuidedDiagram";
 
 // Construction-style side + front view of stairs.
 // values (decimal feet): numSteps, treadDepth, riserHeight, stepWidth, landingDepth, numLandings
-export default function StepsDiagram({ diagram, values, highlight }) {
+// onTapDimension(highlightKey) opens that input; fieldStatus[key] sets the color.
+export default function StepsDiagram({ diagram, values, highlight, onTapDimension, fieldStatus }) {
+  const fs = fieldStatus || {};
+  const tap = (k) => (onTapDimension ? () => onTapDimension(k) : undefined);
+  const status = (k, fallback = "calculated") => (highlight === k ? "active" : fs[k] || fallback);
+  const dim = (k) => !!highlight && highlight !== k;
+
   const numSteps = Math.max(1, Math.round(values.numSteps || 3));
   const tread = values.treadDepth || 1;
   const riser = values.riserHeight || 0.667;
@@ -15,13 +21,9 @@ export default function StepsDiagram({ diagram, values, highlight }) {
   const totalRise = riser * numSteps;
   const landingRun = landingDepth * numLandings;
 
-  // --- Side view ---
   const VB_W = 420;
   const VB_H = 280;
-  const padL = 44;
-  const padR = 16;
-  const padT = 24;
-  const padB = 40;
+  const padL = 44, padR = 16, padT = 24, padB = 40;
   const availW = VB_W - padL - padR;
   const availH = VB_H - padT - padB;
   const drawW = Math.max(totalRun + landingRun, 1);
@@ -32,31 +34,20 @@ export default function StepsDiagram({ diagram, values, highlight }) {
   const baseY = VB_H - padB;
   const topY = baseY - totalRise * s;
 
-  // Build stair profile points
-  let x = x0;
-  let y = baseY;
+  let x = x0, y = baseY;
   const pts = [[x, y]];
   for (let i = 0; i < numSteps; i++) {
-    x += tread * s;
-    pts.push([x, y]);
-    y -= riser * s;
-    pts.push([x, y]);
+    x += tread * s; pts.push([x, y]);
+    y -= riser * s; pts.push([x, y]);
   }
-  if (landingRun > 0) {
-    x += landingRun * s;
-    pts.push([x, y]);
-  }
-  pts.push([x, baseY]);
-  pts.push([x0, baseY]);
+  if (landingRun > 0) { x += landingRun * s; pts.push([x, y]); }
+  pts.push([x, baseY]); pts.push([x0, baseY]);
   const poly = pts.map((p) => p.join(",")).join(" ");
-
   const endX = x;
 
   return (
     <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full h-auto bg-slate-50 rounded-xl border border-slate-200">
-      {/* Stair mass */}
       <polygon points={poly} fill="#e2e8f0" stroke="#475569" strokeWidth={1.5} strokeLinejoin="round" />
-      {/* Tread/riser edges for clarity */}
       {(() => {
         const lines = [];
         let lx = x0, ly = baseY;
@@ -69,41 +60,31 @@ export default function StepsDiagram({ diagram, values, highlight }) {
         return lines;
       })()}
 
-      {/* Total run dimension (bottom) */}
-      <DimLine x1={x0} y1={baseY + 26} x2={endX} y2={baseY + 26} label={`Run ${fmtLen(totalRun)}`} active={highlight === "run"} />
+      <DimLine x1={x0} y1={baseY + 26} x2={endX} y2={baseY + 26} label={`Run ${fmtLen(totalRun)}`} status={status("run")} dim={dim("run")} onTap={tap("treadDepth")} />
       <line x1={x0} y1={baseY} x2={x0} y2={baseY + 26} stroke="#cbd5e1" strokeWidth={0.8} />
       <line x1={endX} y1={baseY} x2={endX} y2={baseY + 26} stroke="#cbd5e1" strokeWidth={0.8} />
 
-      {/* Total rise dimension (left) */}
-      <DimLine x1={x0 - 26} y1={baseY} x2={x0 - 26} y2={topY} label={`Rise ${fmtLen(totalRise)}`} active={highlight === "rise"} />
+      <DimLine x1={x0 - 26} y1={baseY} x2={x0 - 26} y2={topY} label={`Rise ${fmtLen(totalRise)}`} status={status("rise")} dim={dim("rise")} onTap={tap("riserHeight")} />
       <line x1={x0} y1={baseY} x2={x0 - 26} y2={baseY} stroke="#cbd5e1" strokeWidth={0.8} />
       <line x1={x0} y1={topY} x2={x0 - 26} y2={topY} stroke="#cbd5e1" strokeWidth={0.8} />
 
-      {/* Tread depth (first tread highlighted) */}
       {numSteps > 0 && (
-        <DimLine x1={x0} y1={baseY - riser * s - 12} x2={x0 + tread * s} y2={baseY - riser * s - 12} label={`Tread ${fmtLen(tread)}`} active={highlight === "treadDepth"} />
+        <DimLine x1={x0} y1={baseY - riser * s - 12} x2={x0 + tread * s} y2={baseY - riser * s - 12} label={`Tread ${fmtLen(tread)}`} status={status("treadDepth")} dim={dim("treadDepth")} onTap={tap("treadDepth")} />
       )}
-      {/* Riser height (first riser highlighted) */}
       {numSteps > 0 && (
-        <DimLine x1={x0 + tread * s + 12} y1={baseY} x2={x0 + tread * s + 12} y2={baseY - riser * s} label={`Riser ${fmtLen(riser)}`} active={highlight === "riserHeight"} />
+        <DimLine x1={x0 + tread * s + 12} y1={baseY} x2={x0 + tread * s + 12} y2={baseY - riser * s} label={`Riser ${fmtLen(riser)}`} status={status("riserHeight")} dim={dim("riserHeight")} onTap={tap("riserHeight")} />
       )}
-
-      {/* Landing */}
       {landingRun > 0 && (
-        <DimLine x1={x0 + totalRun * s} y1={topY - 12} x2={endX} y2={topY - 12} label={`Landing ${fmtLen(landingDepth)}`} active={highlight === "landing"} />
+        <DimLine x1={x0 + totalRun * s} y1={topY - 12} x2={endX} y2={topY - 12} label={`Landing ${fmtLen(landingDepth)}`} status={status("landing")} dim={dim("landing")} onTap={tap("landing")} />
       )}
 
-      {/* Bullnose marker on first tread front edge */}
       <circle cx={x0} cy={baseY} r={4} fill="#d97706" />
       <text x={x0 - 6} y={baseY + 14} fontSize={9} fill="#92400e">bullnose</text>
-
-      {/* Side returns (left/right) hint */}
       <text x={endX + 4} y={baseY} fontSize={9} fill="#64748b">↤ side return</text>
 
-      {/* Width — front view inset */}
       <g transform="translate(300, 18)">
         <rect x={0} y={0} width={100} height={36} fill="#fef3c7" stroke="#d97706" strokeWidth={1.4} />
-        <DimLine x1={0} y1={44} x2={100} y2={44} label={`Width ${fmtLen(width)}`} active={highlight === "stepWidth"} />
+        <DimLine x1={0} y1={44} x2={100} y2={44} label={`Width ${fmtLen(width)}`} status={status("stepWidth")} dim={dim("stepWidth")} onTap={tap("stepWidth")} />
         <text x={50} y={20} textAnchor="middle" fontSize={9} fill="#92400e">FRONT VIEW</text>
       </g>
 

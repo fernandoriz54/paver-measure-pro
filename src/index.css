@@ -6,6 +6,10 @@
   .no-print { display: none !important; }
 }
 
+@keyframes dimPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.dim-active { animation: dimPulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .dim-active { animation: none; } }
+
 @layer base {
   :root {
     --background: 0 0% 100%;

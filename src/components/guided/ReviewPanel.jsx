@@ -1,27 +1,29 @@
 import React from "react";
-import { CheckCircle2, AlertTriangle, Edit, Copy, Plus, BadgeCheck } from "lucide-react";
+import { Edit, Copy, Plus } from "lucide-react";
 import SaveToProject from "@/components/SaveToProject";
+import ConfidenceBadge from "./ConfidenceBadge";
+import VerificationChecklist from "./VerificationChecklist";
+import WarningPanel from "./WarningPanel";
 
 // Project review before saving.
-// results: { gross, deductions, net, linear, wastePercent, wasteAmount, total, formulaSteps, warnings, reviewRows }
-export default function ReviewPanel({ config, typeId, values, results, verified, onToggleVerified, onEdit, onDuplicate, onAddAnother }) {
-  const section = {
-    label: `${config.title}${typeId ? ` — ${typeId}` : ""}`,
-    type: config.id,
-    params: values,
-    deductions: [],
-    gross: results.gross,
-    totalDeduct: results.deductions,
-    net: results.net,
-  };
+export default function ReviewPanel({
+  config, typeId, values, results, verified, confidence, issues, acknowledged,
+  checklistQuestions, checklist, onToggleCheck,
+  onToggleVerified, onAcknowledge, onFix, onEdit, onDuplicate, onAddAnother,
+}) {
+  const allChecked = checklistQuestions?.length > 0 && checklistQuestions.every((_, i) => checklist[i]);
+  const canVerify = allChecked && (issues?.length || 0) === 0;
 
   return (
     <div className="space-y-4">
+      {/* Confidence score */}
+      {confidence && <ConfidenceBadge confidence={confidence} />}
+
+      {/* Measurements + formula */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
         <h3 className="font-bold text-slate-800 text-base mb-1">Review & Verify</h3>
         <p className="text-xs text-slate-500 mb-3">Check every measurement before saving. Field Measured values are kept at full precision.</p>
 
-        {/* Entered measurements */}
         <div className="rounded-xl border border-slate-200 divide-y divide-slate-100">
           {results.reviewRows.map((r, i) => (
             <div key={i} className="flex items-center justify-between px-3 py-2.5">
@@ -34,7 +36,6 @@ export default function ReviewPanel({ config, typeId, values, results, verified,
           ))}
         </div>
 
-        {/* Formula */}
         {results.formulaSteps?.length > 0 && (
           <div className="mt-3 bg-slate-50 rounded-xl border border-slate-200 p-3">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Formula</div>
@@ -48,35 +49,42 @@ export default function ReviewPanel({ config, typeId, values, results, verified,
             </div>
           </div>
         )}
-
-        {/* Warnings */}
-        {results.warnings?.length > 0 && (
-          <div className="mt-3 bg-amber-50 border border-amber-300 rounded-xl p-3">
-            <div className="flex items-center gap-1.5 text-amber-800 font-semibold text-sm mb-1">
-              <AlertTriangle size={16} /> Check before finalizing
-            </div>
-            <ul className="list-disc list-inside text-sm text-amber-700 space-y-0.5">
-              {results.warnings.map((w, i) => <li key={i}>{w}</li>)}
-            </ul>
-          </div>
-        )}
-
-        {/* Field verified toggle */}
-        <button
-          onClick={onToggleVerified}
-          className={`mt-3 w-full flex items-center justify-center gap-2 rounded-xl py-3 font-semibold border-2 transition ${
-            verified ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-white border-slate-200 text-slate-600"
-          }`}
-        >
-          {verified ? <BadgeCheck size={20} /> : <CheckCircle2 size={20} />}
-          {verified ? "Marked as Field Verified" : "Mark as Field Verified"}
-        </button>
       </div>
 
-      {/* Save to project */}
-      <SaveToProject sections={[section]} />
+      {/* Verification issues (warnings/errors) */}
+      {issues && issues.length > 0 && (
+        <div>
+          <h3 className="text-sm font-bold text-slate-700 mb-2 px-1">Verification Checks</h3>
+          <WarningPanel issues={issues} onFix={onFix} onAcknowledge={onAcknowledge} acknowledged={acknowledged} />
+        </div>
+      )}
 
-      {/* Actions */}
+      {/* Field verification checklist */}
+      <VerificationChecklist questions={checklistQuestions} checked={checklist} onToggle={onToggleCheck} />
+
+      {/* Field verified toggle — only enabled when checklist complete and no open issues */}
+      <button
+        onClick={onToggleVerified}
+        disabled={!canVerify && !verified}
+        className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold border-2 transition ${
+          verified ? "bg-emerald-50 border-emerald-500 text-emerald-700" : canVerify ? "bg-white border-slate-300 text-slate-600 active:scale-95" : "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed"
+        }`}
+      >
+        {verified ? "✓ Marked as Field Verified" : canVerify ? "Mark as Field Verified" : "Complete checklist & resolve issues to verify"}
+      </button>
+
+      {/* Save to project */}
+      <SaveToProject sections={[{
+        label: `${config.title}${typeId ? ` — ${typeId}` : ""}`,
+        type: config.id,
+        params: values,
+        deductions: [],
+        gross: results.gross,
+        totalDeduct: results.deductions,
+        net: results.net,
+      }]} />
+
+      {/* Quick actions */}
       <div className="grid grid-cols-3 gap-2">
         <button onClick={onEdit} className="flex flex-col items-center gap-1 bg-white border border-slate-200 rounded-xl py-3 text-slate-700 active:scale-95">
           <Edit size={18} /><span className="text-xs font-semibold">Edit</span>
