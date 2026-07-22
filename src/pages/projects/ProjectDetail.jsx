@@ -150,13 +150,21 @@ export default function ProjectDetail() {
   const isFull = !!builder;
   const bSections = builder?.sections || [];
   const bDeductions = builder?.deductions || [];
-  const grossArea = builder?.grossArea ?? sections.reduce((s, x) => s + (parseFloat(x.results?.area) || 0), 0);
-  const deductionArea = builder?.deductionArea ?? 0;
-  const netArea = builder?.netArea ?? grossArea;
+  // Recompute from the Builder's own sections/deductions so totals are always
+  // correct even if a stored total is missing; fall back to legacy Section
+  // records only for older summary-only projects.
+  const builderGross = bSections.reduce((s, x) => s + (computeSection(x).area || 0), 0);
+  const builderPerim = bSections.reduce((s, x) => s + (computeSection(x).perimeter || 0), 0);
+  const builderDeduction = bDeductions.reduce((s, d) => s + (d.subtract === false ? 0 : deductArea(d.kind, d.params, d.quantity || 1)), 0);
+  const legacyGross = sections.reduce((s, x) => s + (parseFloat(x.results?.area) || 0), 0);
+  const legacyPerim = sections.reduce((s, x) => s + (parseFloat(x.results?.perimeter) || 0), 0);
+  const grossArea = builder?.grossArea ?? (isFull ? builderGross : legacyGross);
+  const deductionArea = builder?.deductionArea ?? (isFull ? builderDeduction : 0);
+  const netArea = builder?.netArea ?? (isFull ? builderGross - builderDeduction : legacyGross);
   const waste = builder?.waste ?? 0;
   const wasteArea = grossArea * (waste / 100);
-  const finalTotal = builder?.finalTotal ?? grossArea + wasteArea;
-  const perimeter = builder?.perimeter ?? sections.reduce((s, x) => s + (parseFloat(x.results?.perimeter) || 0), 0);
+  const finalTotal = builder?.finalTotal ?? (isFull ? builderGross - builderDeduction + wasteArea : legacyGross + wasteArea);
+  const perimeter = builder?.perimeter ?? (isFull ? builderPerim : legacyPerim);
 
   const vizSections = bSections.map(sectionToViz);
   // attach deductions to first section for the visualizer

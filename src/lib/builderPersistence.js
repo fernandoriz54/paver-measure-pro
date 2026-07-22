@@ -61,6 +61,13 @@ export function hydrate(state) {
     visualizer: state.visualizer || {},
     waste: state.wastePercent ?? 0,
     notes: state.notes || "",
+    // Preserve the saved aggregate totals so every view (Overview, Report,
+    // ProjectDetail) renders the exact same numbers the Builder computed.
+    grossArea: typeof state.grossArea === "number" ? state.grossArea : undefined,
+    deductionArea: typeof state.deductionArea === "number" ? state.deductionArea : undefined,
+    netArea: typeof state.netArea === "number" ? state.netArea : undefined,
+    perimeter: typeof state.perimeter === "number" ? state.perimeter : undefined,
+    finalTotal: typeof state.finalTotal === "number" ? state.finalTotal : undefined,
   };
 }
 

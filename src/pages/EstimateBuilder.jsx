@@ -167,6 +167,7 @@ export default function EstimateBuilder() {
         const snapshot = buildSnapshot({ clientName, sections, deductions, visualizer, waste, notes, totals });
         await base44.entities.Project.update(linkedProjectId, {
           client_name: clientName,
+          notes,
           builder_state: snapshot,
           last_saved_date: new Date().toISOString(),
         });
@@ -191,6 +192,7 @@ export default function EstimateBuilder() {
       if (linkedProjectId) {
         await base44.entities.Project.update(linkedProjectId, {
           client_name: clientName,
+          notes,
           builder_state: snapshot,
           last_saved_date: new Date().toISOString(),
         });
@@ -201,6 +203,7 @@ export default function EstimateBuilder() {
       } else {
         const project = await base44.entities.Project.create({
           client_name: clientName,
+          notes,
           builder_state: snapshot,
           builder_version: 1,
           last_saved_date: new Date().toISOString(),
